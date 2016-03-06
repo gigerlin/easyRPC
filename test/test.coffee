@@ -10,4 +10,4 @@ remote.publish()
 .then (rep) -> console.log rep
 .catch (err) -> console.log err
 
-# browserify -u body-parser  -i ../node_modules/avs-easyrpc/js/rpc.js test.js > test.min.js
+# browserify -i ./node_modules/avs-easyrpc/js/rpc.js test.js > test.min.js
