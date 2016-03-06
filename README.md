@@ -40,7 +40,7 @@ test.use(express.static(__dirname + '/'));
 
 // Load the employee class
 var expressRpc = require('avs-easyrpc').Server;
-new expressRpc(test, { Employee: require('./employee'), timeOut: 10 * 60 * 1000 });
+new expressRpc(test, { Employee: require('./employee') }, { timeOut: 10 * 60 * 1000 });
 
 // Listen on port 8080
 var http = require('http');
@@ -48,7 +48,7 @@ http.createServer(test).listen(8080, function() {
     return console.log("Server started at 8080", new Date());
   });
 ```  
-On the first invocation, the remote object is created and subsequent invocations will be processed by the object (this timeOut is the life duration of the remote object on the server or the session duration. If no request is made to the object in that period of time, the remote object is deleted. An invocation that happens after timeOut is reached will create a new object. Default timeOut is 30 minutes.
+On the first invocation, the remote object is created and subsequent invocations will be processed by the object (this timeOut is the maximum inactivity duration of the remote object on the server or the session duration. If no request is made to the object in that period of time, the remote object is deleted. An invocation that happens after timeOut is reached will create a new object. Default timeOut is 30 minutes.
 
 Exposed classes are needed so that the server can instantiate the objects requested by the browser. For example, the file employee.js could be:
 
@@ -73,6 +73,11 @@ Employee.prototype.getProfile = function(name) {
     }, 3000);
   });
 };
+```
+**N.B.:** the rpc server can serve as many classes as required. For example:
+
+```javascript
+new expressRpc(test, { Employee: require('./employee'), Customer: require('./customer') }, { timeOut: 10 * 60 * 1000 });
 ```
 
 ### Debug
