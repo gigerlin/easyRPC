@@ -42,7 +42,7 @@ class classServer # for Http POST
   process: (req, res) ->
     Class = req.path.substring(1)
     msg = req.body
-    uid = msg.id.split('-')[0]      
+    uid = msg.id.split('-')[0]
     rpc = @["#{Class}.sessions"][uid]
     @_resetTimeOut Class, rpc, uid
     unless rpc
