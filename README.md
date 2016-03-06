@@ -77,7 +77,10 @@ Employee.prototype.getProfile = function(name) {
 **N.B.:** the rpc server can serve as many classes as required. For example:
 
 ```javascript
-new expressRpc(test, { Employee: require('./employee'), Customer: require('./customer') }, { timeOut: 10 * 60 * 1000 });
+new expressRpc(test, { 
+  Employee: require('./employee'), 
+  Customer: require('./customer') 
+}, { timeOut: 10 * 60 * 1000 });
 ```
 
 ### Debug
