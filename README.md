@@ -62,6 +62,19 @@ module.exports = Employee;
 ```
 All methods of class Employee will be automatically exposed but the constructor and the methods beginning with '_' (private methods).
 
+If a method is asynchronous, meaning it does not return a result synchronously, a Promise mut be returned. For example:
+
+```javascript
+  Employee.prototype.getProfile = function(name) {
+    console.log('getProfile of', name);
+    return new Promise(function(resolve, reject) {
+      setTimeout(function() {
+        resolve({ age: 32, email: 'john@acme.com' });
+      }, 3000);
+    });
+  };
+```
+
 ### Debug
 Outgoing and incoming messages are logged to the console on both sides.
 
