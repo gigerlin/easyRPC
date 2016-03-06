@@ -36,7 +36,7 @@ On the server side, a server is required to instantiate the requested remote obj
 ```javascript
 var express = require('express');
 var test = express();
-test.use(express["static"](__dirname + '/'));
+test.use(express.static(__dirname + '/'));
 
 // Load the employee class
 var expressRpc = require('avs-easyrpc').Server;
