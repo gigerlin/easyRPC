@@ -15,7 +15,8 @@
   expressRpc = require('avs-easyrpc').Server;
 
   new expressRpc(store = express(), {
-    Employee: require('./employee'),
+    Employee: require('./employee')
+  }, {
     timeOut: 10 * 60 * 1000
   });
 
