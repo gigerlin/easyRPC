@@ -21,7 +21,7 @@ var remote = new Remote({
 ```
 An optional attribute url can be used to point to a cross origin web server if needed (the default url is location.origin).
 
-Invokation is then possible on remote objects in a way similar to local objects. The main difference is that all methods return a Promise object (since the result of the invokation is deferred), that can be used to wait for the result. For example:
+Invocation is then possible on remote objects in a way similar to local objects. The main difference is that all methods return a Promise object (since the result of the invocation is deferred), that can be used to wait for the result. For example:
 
 ```javascript
 remote.getProfile('john').then(function(rep) {
@@ -31,7 +31,7 @@ remote.getProfile('john').then(function(rep) {
 });
 ```
 ### Server Side
-On the server side, a server is required to instantiate the requested remote objects and process the method invokations.
+On the server side, a server is required to instantiate the requested remote objects and process the method invocations.
 
 ```javascript
 var express = require('express');
@@ -48,7 +48,7 @@ http.createServer(test).listen(8080, function() {
     return console.log("Server started at 8080", new Date());
   });
 ```  
-On the first invokation, the remote object is created and subsequent invokations will be processed by the object (this timeOut is the life duration of the remote object on the server or the session duration. If no request is made to the object in that period of time, the remote object is deleted. An invokation that happens after timeOut is reached will create a new object. Default timeOut is 30 minutes.
+On the first invocation, the remote object is created and subsequent invocations will be processed by the object (this timeOut is the life duration of the remote object on the server or the session duration. If no request is made to the object in that period of time, the remote object is deleted. An invocation that happens after timeOut is reached will create a new object. Default timeOut is 30 minutes.
 
 Exposed classes are needed so that the server can instantiate the objects requested by the browser. For example, the file exmployee.js could be:
 
