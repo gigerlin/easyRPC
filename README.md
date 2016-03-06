@@ -68,11 +68,14 @@ Outgoing and incoming messages are logged to the console on both sides.
 **Server example**
 
 2016-03-06 14:51:03 rpc adding new session Employee 88487158
+
 2016-03-06 14:51:03 rpc 88487158-1: in { method: 'getProfile', args: [ 'john' ], id: '88487158-1' }
+
 2016-03-06 14:51:03 rpc 88487158-1: out { age: 32, email: 'john@acme.com' }
 
-Messages have an unique ID composed of the session ID and a chronological number. Example: 88487158-1 is the first message of the session 88487158
+Messages have a unique ID composed of the session ID and a chronological number. Example: 88487158-1 is the first message of the session 88487158.
 
 Errors are reported from the server to the browser. For example, publish is not exposed by Employee:
 2016-03-06 14:51:03 rpc 88487158-2: out {"method":"publish","args":[],"id":"88487158-2"}
+
 2016-03-06 14:51:03 rpc 88487158-2: in {"err":"error: method publish is unknown"}
