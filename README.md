@@ -7,14 +7,14 @@ This tiny library allows to easily invoke methods on remote objects from a web b
 Remote objects are defined by their class name and the methods that need to be invoked. For example:
 
 ```javascript
-Remote = require('avs-easyrpc').Remote;
+var Remote = require('avs-easyrpc').Remote;
 
-remote = new Remote({
+var remote = new Remote({
   "class": 'Employee',
   methods: ['getProfile', 'publish']
 });
 ```
-An optional attribute url can be used to point to a cross origin web server if needed (the default url is location.origin)
+An optional attribute url can be used to point to a cross origin web server if needed (the default url is location.origin).
 
 Invokation is then possible on remote objects in a way similar to local objects. The main difference is that all methods return a Promise object (since the result of the invokation is deferred), that can be used to wait for the result. For example:
 
@@ -63,6 +63,7 @@ Outgoing and incoming messages are logged to the console on both sides.
 **Browser Example**
 
 2016-03-06 14:51:03 rpc 88487158-1: out {"method":"getProfile","args":["john"],"id":"88487158-1"}
+
 2016-03-06 14:51:03 rpc 88487158-1: in {"rep":{"age":32,"email":"john@acme.com"}}
 
 **Server example**
@@ -76,6 +77,7 @@ Outgoing and incoming messages are logged to the console on both sides.
 Messages have a unique ID composed of the session ID and a chronological number. Example: 88487158-1 is the first message of the session 88487158.
 
 Errors are reported from the server to the browser. For example, publish is not exposed by Employee:
+
 2016-03-06 14:51:03 rpc 88487158-2: out {"method":"publish","args":[],"id":"88487158-2"}
 
 2016-03-06 14:51:03 rpc 88487158-2: in {"err":"error: method publish is unknown"}
