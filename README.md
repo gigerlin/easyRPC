@@ -3,6 +3,9 @@ RPC made easy for browser
 
 This tiny library allows to easily invoke methods on remote objects from a web browser via an HTTP request. It uses the browser native fetch function (cf. [Fetch API](https://developer.mozilla.org/en/docs/Web/API/Fetch_API "Fetch API") for browser compatibility). Polyfills exist for browser which do not support fetch.
 
+### Installation
+`npm install avs-easyrpc`
+
 ### Browser Side
 Remote objects are defined by their class name and the methods that need to be invoked. For example:
 
@@ -60,13 +63,13 @@ All methods of class Employee will be automatically exposed but the constructor 
 ### Debug
 Outgoing and incoming messages are logged to the console on both sides.
 
-**Browser Example**
+#### Browser Example
 
 2016-03-06 14:51:03 rpc 88487158-1: out {"method":"getProfile","args":["john"],"id":"88487158-1"}
 
 2016-03-06 14:51:03 rpc 88487158-1: in {"rep":{"age":32,"email":"john@acme.com"}}
 
-**Server example**
+#### Server example
 
 2016-03-06 14:51:03 rpc adding new session Employee 88487158
 
@@ -76,10 +79,15 @@ Outgoing and incoming messages are logged to the console on both sides.
 
 Messages have a unique ID composed of the session ID and a chronological number. Example: 88487158-1 is the first message of the session 88487158.
 
-**Error Handling**
+#### Error Handling
 
 Errors are reported from the server to the browser. For example, publish is not exposed by Employee:
 
 2016-03-06 14:51:03 rpc 88487158-2: out {"method":"publish","args":[],"id":"88487158-2"}
 
 2016-03-06 14:51:03 rpc 88487158-2: in {"err":"error: method publish is unknown"}
+
+### Test
+A minimalist sample is provided for test purpose. It includes all necessary files, in coffeescript and javascript format. The html file uses a browserified javascript file (test.min.js), that can be obtained via the command line:
+
+`browserify -i ./node_modules/avs-easyrpc/js/rpc.js test.js > test.min.js`
