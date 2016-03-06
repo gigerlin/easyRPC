@@ -6,6 +6,8 @@ This tiny library allows to easily invoke methods on remote objects from a web b
 ### Installation
 `npm install avs-easyrpc`
 
+The server needs the modules express and body-parser: `npm install express body-parser`
+
 ### Browser Side
 Remote objects are defined by their class name and the methods that need to be invoked. For example:
 
