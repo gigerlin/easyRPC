@@ -1,6 +1,6 @@
 {
   "name": "avs-easyrpc",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "RPC made easy for browser",
   "main": "index.js",
   "scripts": {
@@ -19,5 +19,6 @@
   "bugs": {
     "url": "https://github.com/gigerlin/easyRPC/issues"
   },
-  "homepage": "https://github.com/gigerlin/easyRPC"
+  "homepage": "https://github.com/gigerlin/easyRPC",
+  "readmeFilename": "README.md"
 }
