@@ -19,11 +19,15 @@ class Rpc # inspired from minimum-rpc
       try
         rep = @local[msg.method] msg.args...
         if rep instanceof Promise
-          rep.then (rep) ->  log "#{msg.id}: out", rep; res.send rep:rep
-          rep.catch (err) -> res.send err:err
-        else log "#{msg.id}: out", rep; res.send rep:rep
-      catch e then res.send err:"error in #{msg.method}: #{e}"
-    else res.send err:"error: method #{msg.method} is unknown"
+          rep.then (rep) =>  @_return msg, rep:rep, res
+          rep.catch (err) => @_return msg, err:err, res
+        else @_return msg, rep:rep, res
+      catch e then @_return msg, err:"error in #{msg.method}: #{e}", res
+    else @_return msg, err:"error: method #{msg.method} is unknown", res
+
+  _return: (msg, rep, res) ->
+    log "#{msg.id}: out", rep
+    res.send rep
     
 #
 # Class Server
@@ -42,9 +46,9 @@ class classServer # for Http POST
     rpc = @["#{Class}.sessions"][uid]
     @_resetTimeOut Class, rpc, uid
     unless rpc
-      log "adding new session #{Class} #{uid} (total: #{Object.keys(@["#{Class}.sessions"])})"
       @["#{Class}.sessions"][uid] = rpc = new Rpc(new @classes[Class]())
       @_timeOut Class, rpc, uid
+      log "adding new session #{Class} #{uid} (total: #{Object.keys(@["#{Class}.sessions"]).length})"
 
     rpc.process msg, res
 

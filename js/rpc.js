@@ -25,34 +25,41 @@
         try {
           rep = (_ref = this.local)[msg.method].apply(_ref, msg.args);
           if (rep instanceof Promise) {
-            rep.then(function(rep) {
-              log("" + msg.id + ": out", rep);
-              return res.send({
-                rep: rep
-              });
-            });
-            return rep["catch"](function(err) {
-              return res.send({
-                err: err
-              });
-            });
+            rep.then((function(_this) {
+              return function(rep) {
+                return _this._return(msg, {
+                  rep: rep
+                }, res);
+              };
+            })(this));
+            return rep["catch"]((function(_this) {
+              return function(err) {
+                return _this._return(msg, {
+                  err: err
+                }, res);
+              };
+            })(this));
           } else {
-            log("" + msg.id + ": out", rep);
-            return res.send({
+            return this._return(msg, {
               rep: rep
-            });
+            }, res);
           }
         } catch (_error) {
           e = _error;
-          return res.send({
+          return this._return(msg, {
             err: "error in " + msg.method + ": " + e
-          });
+          }, res);
         }
       } else {
-        return res.send({
+        return this._return(msg, {
           err: "error: method " + msg.method + " is unknown"
-        });
+        }, res);
       }
+    };
+
+    Rpc.prototype._return = function(msg, rep, res) {
+      log("" + msg.id + ": out", rep);
+      return res.send(rep);
     };
 
     return Rpc;
@@ -88,9 +95,9 @@
       rpc = this["" + Class + ".sessions"][uid];
       this._resetTimeOut(Class, rpc, uid);
       if (!rpc) {
-        log("adding new session " + Class + " " + uid + " (total: " + (Object.keys(this["" + Class + ".sessions"])) + ")");
         this["" + Class + ".sessions"][uid] = rpc = new Rpc(new this.classes[Class]());
         this._timeOut(Class, rpc, uid);
+        log("adding new session " + Class + " " + uid + " (total: " + (Object.keys(this["" + Class + ".sessions"]).length) + ")");
       }
       return rpc.process(msg, res);
     };
