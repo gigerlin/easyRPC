@@ -1,0 +1,23 @@
+{
+  "name": "avs-easyrpc",
+  "version": "1.0.0",
+  "description": "RPC made easy for browser",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gigerlin/easyRPC.git"
+  },
+  "keywords": [
+    "RPC",
+    "browser"
+  ],
+  "author": "Gilles Gerlinger",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gigerlin/easyRPC/issues"
+  },
+  "homepage": "https://github.com/gigerlin/easyRPC"
+}

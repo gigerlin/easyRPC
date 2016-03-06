@@ -18,33 +18,41 @@
       this.local = local;
     }
 
-    Rpc.prototype.process = function(msg) {
+    Rpc.prototype.process = function(msg, res) {
+      var e, rep, _ref;
       log("" + msg.id + ": in", msg);
-      return new Promise((function(_this) {
-        return function(resolve, reject) {
-          var e, rep, _ref;
-          if (_this.local[msg.method]) {
-            try {
-              rep = (_ref = _this.local)[msg.method].apply(_ref, msg.args);
-              if (rep instanceof Promise) {
-                rep.then(function(rep) {
-                  return resolve(rep);
-                });
-                return rep["catch"](function(err) {
-                  return reject(err);
-                });
-              } else {
-                return resolve(rep);
-              }
-            } catch (_error) {
-              e = _error;
-              return reject("error in " + msg.method + ": " + e);
-            }
+      if (this.local[msg.method]) {
+        try {
+          rep = (_ref = this.local)[msg.method].apply(_ref, msg.args);
+          if (rep instanceof Promise) {
+            rep.then(function(rep) {
+              log("" + msg.id + ": out", rep);
+              return res.send({
+                rep: rep
+              });
+            });
+            return rep["catch"](function(err) {
+              return res.send({
+                err: err
+              });
+            });
           } else {
-            return reject("error: method " + msg.method + " is unknown");
+            log("" + msg.id + ": out", rep);
+            return res.send({
+              rep: rep
+            });
           }
-        };
-      })(this));
+        } catch (_error) {
+          e = _error;
+          return res.send({
+            err: "error in " + msg.method + ": " + e
+          });
+        }
+      } else {
+        return res.send({
+          err: "error: method " + msg.method + " is unknown"
+        });
+      }
     };
 
     return Rpc;
@@ -72,8 +80,10 @@
       }
     }
 
-    classServer.prototype.process = function(Class, msg) {
-      var rpc, uid;
+    classServer.prototype.process = function(req, res) {
+      var Class, msg, rpc, uid;
+      Class = req.path.substring(1);
+      msg = req.body;
       uid = msg.id.split('-')[0];
       rpc = this["" + Class + ".sessions"][uid];
       this._resetTimeOut(Class, rpc, uid);
@@ -82,14 +92,7 @@
         this["" + Class + ".sessions"][uid] = rpc = new Rpc(new this.classes[Class]());
         this._timeOut(Class, rpc, uid);
       }
-      return new Promise(function(resolve, reject) {
-        return rpc.process(msg).then(function(rep) {
-          log("" + msg.id + ": out", rep);
-          return resolve(rep);
-        })["catch"](function(err) {
-          return reject(err);
-        });
-      });
+      return rpc.process(msg, res);
     };
 
     classServer.prototype._timeOut = function(Class, rpc, uid) {
@@ -131,24 +134,7 @@
       server = new classServer(classes, options.timeOut);
       for (Class in classes) {
         app.post("/" + Class, function(req, res) {
-          var err;
-          try {
-            return server.process(req.path.substring(1), req.body).then(function(rep) {
-              return res.send({
-                rep: rep
-              });
-            })["catch"](function(err) {
-              return res.send({
-                err: err
-              });
-            });
-          } catch (_error) {
-            err = _error;
-            log(err.stack);
-            return res.send({
-              err: err
-            });
-          }
+          return server.process(req, res);
         });
       }
     }

@@ -13,18 +13,17 @@ sessionTimeOut = 30 * 60 * 1000 # 30 minutes
 class Rpc # inspired from minimum-rpc
   constructor: (@local) ->
 
-  process: (msg) ->
+  process: (msg, res) ->
     log "#{msg.id}: in", msg
-    new Promise (resolve, reject) =>
-      if @local[msg.method]
-        try
-          rep = @local[msg.method] msg.args...
-          if rep instanceof Promise
-            rep.then (rep) -> resolve rep
-            rep.catch (err) -> reject err
-          else resolve rep
-        catch e then reject "error in #{msg.method}: #{e}"
-      else reject "error: method #{msg.method} is unknown"
+    if @local[msg.method]
+      try
+        rep = @local[msg.method] msg.args...
+        if rep instanceof Promise
+          rep.then (rep) ->  log "#{msg.id}: out", rep; res.send rep:rep
+          rep.catch (err) -> res.send err:err
+        else log "#{msg.id}: out", rep; res.send rep:rep
+      catch e then res.send err:"error in #{msg.method}: #{e}"
+    else res.send err:"error: method #{msg.method} is unknown"
     
 #
 # Class Server
@@ -36,7 +35,9 @@ class classServer # for Http POST
       @["#{Class}.sessions"] = []
       @methods[Class] = (method for method of @classes[Class].prototype when method.charAt(0) isnt '_' and method isnt 'constructor')
 
-  process: (Class, msg) ->
+  process: (req, res) ->
+    Class = req.path.substring(1)
+    msg = req.body
     uid = msg.id.split('-')[0]      
     rpc = @["#{Class}.sessions"][uid]
     @_resetTimeOut Class, rpc, uid
@@ -45,11 +46,7 @@ class classServer # for Http POST
       @["#{Class}.sessions"][uid] = rpc = new Rpc(new @classes[Class]())
       @_timeOut Class, rpc, uid
 
-    new Promise (resolve, reject) -> 
-      rpc.process(msg).then (rep) -> 
-        log "#{msg.id}: out", rep
-        resolve rep
-      .catch (err) -> reject err
+    rpc.process msg, res
 
   _timeOut: (Class, rpc, uid) ->
     rpc.timeOut = setTimeout => 
@@ -69,11 +66,6 @@ module.exports = class expressRpc
     app.use (err, req, res, next) -> log err.stack; next err
     server = new classServer classes, options.timeOut
     for Class of classes
-      app.post "/#{Class}", (req, res) ->
-        try
-          server.process req.path.substring(1), req.body
-          .then  (rep) -> res.send rep:rep
-          .catch (err) -> res.send err:err
-        catch err then log err.stack; res.send err:err
+      app.post "/#{Class}", (req, res) -> server.process req, res
 
 log = (text...) -> console.log new Date().toISOString().replace('T', ' ').slice(0, 19), 'rpc', text...

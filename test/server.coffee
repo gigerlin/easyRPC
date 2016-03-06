@@ -5,7 +5,7 @@
 
 http = require 'http'
 express = require 'express'
-expressRpc = require('./rpc')
+expressRpc = require('avs-easyrpc').Server
 
 new expressRpc store = express(), Employee:require('./employee'), timeOut:10 * 60 * 1000
 store.use express.static(__dirname + '/')
