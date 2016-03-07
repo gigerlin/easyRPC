@@ -1,6 +1,6 @@
 {
   "name": "avs-easyrpc",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "RPC made easy for browser",
   "main": "index.js",
   "scripts": {
@@ -11,14 +11,17 @@
     "url": "https://github.com/gigerlin/easyRPC.git"
   },
   "keywords": [
-    "RPC",
-    "browser"
+    "RPC", "browser", "Promise", "fetch", "remote"
   ],
   "author": "Gilles Gerlinger",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/gigerlin/easyRPC/issues"
   },
+  "dependencies": {
+    "body-parser": "^1.12.4",
+    "express": "^4.12.3"
+  },  
   "homepage": "https://github.com/gigerlin/easyRPC",
   "readmeFilename": "README.md"
 }
