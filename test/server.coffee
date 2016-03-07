@@ -5,11 +5,14 @@
 
 http = require 'http'
 express = require 'express'
-expressRpc = require('avs-easyrpc').Server
-
-new expressRpc store = express(), { Employee:require('./employee') }, timeOut:10 * 60 * 1000
+store = express()
 store.use express.static(__dirname + '/')
+
+expressRpc = require('avs-easyrpc').Server
 
 port = 4145
 http.createServer store
-.listen port, -> console.log "Server started at #{port}", new Date()
+.listen port, -> 
+  console.log "Server started at #{port}", new Date()
+  new expressRpc store, { Employee:require('./employee') }, timeOut:10 * 60 * 1000
+

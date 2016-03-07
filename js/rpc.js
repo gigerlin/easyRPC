@@ -6,9 +6,13 @@
  */
 
 (function() {
-  var Rpc, classServer, expressRpc, log, parser, sessionTimeOut;
+  var Promise, Rpc, classServer, expressRpc, log, parser, sessionTimeOut;
 
   parser = require('body-parser');
+
+  if (typeof Promise === 'undefined') {
+    Promise = require('./promise');
+  }
 
   log = require('./log');
 
@@ -141,6 +145,7 @@
       });
       server = new classServer(classes, options.timeOut);
       for (Class in classes) {
+        log("listening on class " + Class);
         app.post("/" + Class, function(req, res) {
           return server.process(req, res);
         });

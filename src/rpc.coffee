@@ -5,6 +5,8 @@
 
 parser = require('body-parser')
 
+if typeof Promise is 'undefined' then Promise = require './promise'
+
 log = require './log'
 sessionTimeOut = 30 * 60 * 1000 # 30 minutes
 
@@ -71,5 +73,6 @@ module.exports = class expressRpc
     app.use (err, req, res, next) -> log err.stack; next err
     server = new classServer classes, options.timeOut
     for Class of classes
+      log "listening on class #{Class}"
       app.post "/#{Class}", (req, res) -> server.process req, res
 

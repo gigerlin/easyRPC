@@ -13,6 +13,7 @@
     Promise.prototype.status = 0;
 
     function Promise(ready) {
+      console.log('using own Promise');
       this._chain = [];
       if (ready) {
         ready((function(_this) {
