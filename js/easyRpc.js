@@ -6,7 +6,13 @@
  */
 
 (function() {
-  var Remote, log, send;
+  var Remote, fetch, log, send;
+
+  log = require('./log');
+
+  if (typeof window === 'object') {
+    fetch = window.fetch || require('./fetch');
+  }
 
   module.exports = Remote = (function() {
     function Remote(options) {
@@ -39,16 +45,14 @@
   })();
 
   send = function(request, msg) {
-    var message;
-    message = JSON.stringify(msg);
-    log("" + msg.id + ": out " + message);
+    log("" + msg.id + ": out", msg);
     return new Promise(function(resolve, reject) {
       return fetch(request, {
         headers: {
           'Content-Type': 'application/json; charset=utf-8'
         },
         method: 'post',
-        body: message
+        body: JSON.stringify(msg)
       })["catch"](function(err) {
         log("" + msg.id + ": network error " + err);
         return reject(err);
@@ -58,7 +62,7 @@
         }
       }).then(function(rep) {
         if (rep) {
-          log("" + msg.id + ": in " + (JSON.stringify(rep)));
+          log("" + msg.id + ": in", rep);
           if (rep.err) {
             return reject(rep.err);
           } else {
@@ -67,13 +71,6 @@
         }
       });
     });
-  };
-
-  log = function(text) {
-    if (text.length > 127) {
-      text = text.substring(0, 127) + ' ...';
-    }
-    return console.log(new Date().toISOString().replace('T', ' ').slice(0, 19), 'rpc', text);
   };
 
 }).call(this);

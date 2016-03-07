@@ -6,10 +6,11 @@
  */
 
 (function() {
-  var Rpc, classServer, expressRpc, log, parser, sessionTimeOut,
-    __slice = [].slice;
+  var Rpc, classServer, expressRpc, log, parser, sessionTimeOut;
 
   parser = require('body-parser');
+
+  log = require('./log');
 
   sessionTimeOut = 30 * 60 * 1000;
 
@@ -149,11 +150,5 @@
     return expressRpc;
 
   })();
-
-  log = function() {
-    var text;
-    text = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-    return console.log.apply(console, [new Date().toISOString().replace('T', ' ').slice(0, 19), 'rpc'].concat(__slice.call(text)));
-  };
 
 }).call(this);

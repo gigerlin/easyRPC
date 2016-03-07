@@ -5,6 +5,7 @@
 
 parser = require('body-parser')
 
+log = require './log'
 sessionTimeOut = 30 * 60 * 1000 # 30 minutes
 
 #
@@ -72,4 +73,3 @@ module.exports = class expressRpc
     for Class of classes
       app.post "/#{Class}", (req, res) -> server.process req, res
 
-log = (text...) -> console.log new Date().toISOString().replace('T', ' ').slice(0, 19), 'rpc', text...

@@ -3,6 +3,10 @@
   Copyright 2016. All rights reserved.
 ###
 
+log = require './log'
+
+if typeof window is 'object' then fetch = window.fetch or require './fetch' # for Safari & IE
+
 module.exports = class Remote 
   constructor: (options) -> 
     ctx = count:0, uid:Math.random().toString().substring(2, 10), request:"#{options.url or location.origin}/#{options.class}"
@@ -11,16 +15,11 @@ module.exports = class Remote
     ) method for method in options.methods
 
 send = (request, msg) ->
-  message = JSON.stringify msg
-  log "#{msg.id}: out #{message}"
+  log "#{msg.id}: out", msg
   new Promise (resolve, reject) ->
-    fetch request, headers:{'Content-Type':'application/json; charset=utf-8'}, method:'post', body:message 
+    fetch request, headers:{'Content-Type':'application/json; charset=utf-8'}, method:'post', body:JSON.stringify msg 
     .catch (err) -> log "#{msg.id}: network error #{err}"; reject err
     .then (response) -> response.json() if response # no response when page reloads
     .then (rep) -> if rep
-      log "#{msg.id}: in #{JSON.stringify rep}"    
+      log "#{msg.id}: in", rep    
       if rep.err then reject rep.err else resolve rep.rep
-
-log = (text) ->
-  text = text.substring(0, 127) + ' ...' if text.length > 127
-  console.log new Date().toISOString().replace('T', ' ').slice(0, 19), 'rpc', text
