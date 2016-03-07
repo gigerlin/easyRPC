@@ -3,12 +3,14 @@
   Copyright 2015. All rights reserved.
 ###
 
+if typeof window is 'object' then Promise = window.Promise or require './promise' # for Safari & IE
+
 class Response
   constructor: (@data) ->
   json: -> JSON.parse @data
 
 module.exports = fetch = (uri, options) ->
-  console.log 'using own fetch'
+  # console.log 'using own fetch'
   new Promise (resolve, reject) ->
     xhr = new XMLHttpRequest()
     xhr.open options.method, uri, true

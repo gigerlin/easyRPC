@@ -6,12 +6,13 @@
  */
 
 (function() {
-  var Remote, fetch, log, send;
+  var Promise, Remote, fetch, log, send;
 
   log = require('./log');
 
   if (typeof window === 'object') {
     fetch = window.fetch || require('./fetch');
+    Promise = window.Promise || require('./promise');
   }
 
   module.exports = Remote = (function() {

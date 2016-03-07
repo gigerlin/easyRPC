@@ -6,7 +6,7 @@
 module.exports = class Promise
   status: 0 # 0: pending, 1: resolved, 2: rejected
   constructor: (ready) ->
-    console.log 'using own Promise'
+    # console.log 'using own Promise'
     @_chain = []
     ready(
       => @resolve arguments... # set resolve

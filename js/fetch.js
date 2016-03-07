@@ -6,7 +6,11 @@
  */
 
 (function() {
-  var Response, fetch;
+  var Promise, Response, fetch;
+
+  if (typeof window === 'object') {
+    Promise = window.Promise || require('./promise');
+  }
 
   Response = (function() {
     function Response(data) {
@@ -22,7 +26,6 @@
   })();
 
   module.exports = fetch = function(uri, options) {
-    console.log('using own fetch');
     return new Promise(function(resolve, reject) {
       var xhr;
       xhr = new XMLHttpRequest();
@@ -30,7 +33,6 @@
       xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
       xhr.send(options.body || null);
       xhr.onload = function() {
-        console.log('got', xhr.response);
         return resolve(new Response(xhr.response));
       };
       return xhr.onerror = function() {

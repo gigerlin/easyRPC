@@ -5,7 +5,9 @@
 
 log = require './log'
 
-if typeof window is 'object' then fetch = window.fetch or require './fetch' # for Safari & IE
+if typeof window is 'object' # for Safari & IE
+  fetch = window.fetch or require './fetch'
+  Promise = window.Promise or require './promise'
 
 module.exports = class Remote 
   constructor: (options) -> 
