@@ -16,20 +16,24 @@ var Remote = require('avs-easyrpc').Remote;
 
 var remote = new Remote({
   "class": 'Employee',
-  methods: ['getProfile', 'publish']
+  methods: ['getProfile', 'publish'],
+  url: location.origin
 });
 ```
-An optional attribute url can be used to point to a cross origin web server if needed (the default url is location.origin).
+The third attribute, url, is optional. Default is location.origin. It can be used to point to a cross origin web server if needed.
 
 Invocation is then possible on remote objects in a way similar to local objects. The main difference is that all methods return a Promise object (since the result of the invocation is deferred), that can be used to wait for the result. For example:
 
 ```javascript
 remote.getProfile('john').then(function(rep) {
-  return console.log(rep);
+  var john = rep;
+  console.log(john);
 }).catch(function(err) {
-  return console.log(err);
+  console.log(err);
 });
 ```
+Each remote object is allocated a unique session ID (see the debug section for details). Several remote objects can be created on the same remote class. They will all get a unique session ID. For example, one can create Bob and Alice are remote employees. Bob and Alice will have their own data and sessions...
+
 ### Server Side
 On the server side, a server is required to instantiate the requested remote objects and process the method invocations. The server is based upon the express web framework.
 
@@ -50,7 +54,7 @@ http.createServer(test).listen(8080, function() {
 ```  
 On the first invocation, the remote object is created and subsequent invocations will be processed by this object. The timeOut option is the maximum inactivity duration of the remote object on the server, i.e., the session duration. If no request is made to the object in that period of time, the remote object is deleted. An invocation that happens after timeOut is reached will create a new object. Default timeOut is 30 minutes.
 
-A second option is the maximum size of data transferred to remote object. .Default is 512kb. Make it bigger if need be.
+A second option is the maximum size of data transferred to remote object.Default is 512kb. Make it bigger if need be.
 
 Exposed classes are needed so that the server can instantiate the objects requested by the browser. For example, the file employee.js could be:
 
@@ -62,7 +66,7 @@ Employee.prototype.getProfile = function(name) {
 };
 module.exports = Employee;
 ```
-All methods of class Employee will be automatically exposed but the constructor and the methods beginning with '_' (private methods).
+All methods of class Employee will be **automatically** exposed but the constructor and the methods beginning with '_' (those are seen as private methods).
 
 If a method is asynchronous, meaning it does not return a result synchronously, a Promise mut be returned. For example:
 

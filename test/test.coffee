@@ -1,6 +1,6 @@
 Remote = require('avs-easyrpc').Remote
 
-remote = new Remote class:'Employee', methods:['getProfile', 'publish']
+remote = new Remote class:'Employee', methods:['getProfile', 'publish'], url:location.origin
 
 remote.getProfile 'john'
 .then (rep) -> console.log rep

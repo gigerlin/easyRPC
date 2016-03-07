@@ -6,7 +6,8 @@
 
   remote = new Remote({
     "class": 'Employee',
-    methods: ['getProfile', 'publish']
+    methods: ['getProfile', 'publish'],
+    url: location.origin
   });
 
   remote.getProfile('john').then(function(rep) {
