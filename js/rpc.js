@@ -29,7 +29,7 @@
       if (this.local[msg.method]) {
         try {
           rep = (_ref = this.local)[msg.method].apply(_ref, msg.args);
-          if (rep instanceof Promise) {
+          if (typeof rep["catch"] === 'function') {
             rep.then((function(_this) {
               return function(rep) {
                 return _this._return(msg, {
