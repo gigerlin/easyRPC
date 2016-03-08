@@ -6,7 +6,7 @@
  */
 
 (function() {
-  var Promise, Rpc, classServer, expressRpc, log, parser, sessionTimeOut;
+  var Promise, Rpc, channels, classServer, expressRpc, log, parser, sessionTimeOut, sse, tag;
 
   parser = require('body-parser');
 
@@ -18,6 +18,8 @@
 
   sessionTimeOut = 30 * 60 * 1000;
 
+  tag = 'rpc';
+
   Rpc = (function() {
     function Rpc(local) {
       this.local = local;
@@ -25,9 +27,12 @@
 
     Rpc.prototype.process = function(msg, res) {
       var e, rep, _ref;
-      log("" + msg.id + ": in", msg);
+      log("" + msg.id + " in", msg);
       if (this.local[msg.method]) {
         try {
+          if (msg.method === '__sse') {
+            msg.args = [channels[msg.args[0]]];
+          }
           rep = (_ref = this.local)[msg.method].apply(_ref, msg.args);
           if (typeof rep["catch"] === 'function') {
             rep.then((function(_this) {
@@ -63,7 +68,7 @@
     };
 
     Rpc.prototype._return = function(msg, rep, res) {
-      log("" + msg.id + ": out", rep);
+      log("" + msg.id + " out", rep);
       return res.send(rep);
     };
 
@@ -150,10 +155,32 @@
           return server.process(req, res);
         });
       }
+      app.get("/" + tag, sse, function(req, res) {
+        var uid;
+        channels[uid = Number(new Date())] = res;
+        log('SSE channel uid:', uid);
+        res.__uid = uid;
+        return res.json({
+          uid: uid
+        });
+      });
     }
 
     return expressRpc;
 
   })();
+
+  channels = [];
+
+  sse = function(req, resp, next) {
+    resp.statusCode = 200;
+    resp.setHeader('Content-Type', 'text/event-stream');
+    resp.setHeader('Cache-Control', 'no-cache');
+    resp.setHeader('Connection', 'keep-alive');
+    resp.json = function(msg) {
+      return resp.write("event: " + tag + "\ndata: " + (JSON.stringify(msg)) + "\n\n");
+    };
+    return next();
+  };
 
 }).call(this);

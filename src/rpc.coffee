@@ -9,6 +9,7 @@ if typeof Promise is 'undefined' then Promise = require './promise'
 
 log = require './log'
 sessionTimeOut = 30 * 60 * 1000 # 30 minutes
+tag = 'rpc'
 
 #
 # Http Rpc
@@ -17,9 +18,10 @@ class Rpc # inspired from minimum-rpc
   constructor: (@local) ->
 
   process: (msg, res) ->
-    log "#{msg.id}: in", msg
+    log "#{msg.id} in", msg
     if @local[msg.method]
       try
+        msg.args = [channels[msg.args[0]]] if msg.method is '__sse' # SSE Support
         rep = @local[msg.method] msg.args...
         if typeof rep.catch is 'function' # rep instanceof Promise
           rep.then (rep) =>  @_return msg, rep:rep, res
@@ -29,7 +31,7 @@ class Rpc # inspired from minimum-rpc
     else @_return msg, err:"error: method #{msg.method} is unknown", res
 
   _return: (msg, rep, res) ->
-    log "#{msg.id}: out", rep
+    log "#{msg.id} out", rep
     res.send rep
     
 #
@@ -75,4 +77,20 @@ module.exports = class expressRpc
     for Class of classes
       log "listening on class #{Class}"
       app.post "/#{Class}", (req, res) -> server.process req, res
+#
+# SSE Support
+#
+    app.get "/#{tag}", sse, (req, res) -> 
+      channels[uid = Number(new Date())] = res
+      log 'SSE channel uid:', uid
+      res.__uid = uid
+      res.json uid:uid
 
+channels = []
+sse = (req, resp, next) ->
+  resp.statusCode = 200
+  resp.setHeader 'Content-Type', 'text/event-stream'
+  resp.setHeader 'Cache-Control', 'no-cache'
+  resp.setHeader 'Connection', 'keep-alive'
+  resp.json = (msg) -> resp.write "event: #{tag}\ndata: #{JSON.stringify msg}\n\n"
+  next()

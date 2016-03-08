@@ -23,6 +23,8 @@
         uid: Math.random().toString().substring(2, 10),
         request: "" + (options.url || location.origin) + "/" + options["class"]
       };
+      options.methods = options.methods || [];
+      options.methods.push('__sse');
       _ref = options.methods;
       _fn = (function(_this) {
         return function(method) {
@@ -46,7 +48,7 @@
   })();
 
   send = function(request, msg) {
-    log("" + msg.id + ": out", msg);
+    log("" + msg.id + " out", msg);
     return new Promise(function(resolve, reject) {
       return fetch(request, {
         headers: {
@@ -63,7 +65,7 @@
         }
       }).then(function(rep) {
         if (rep) {
-          log("" + msg.id + ": in", rep);
+          log("" + msg.id + " in", rep);
           if (rep.err) {
             return reject(rep.err);
           } else {
