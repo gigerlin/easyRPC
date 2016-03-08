@@ -19,7 +19,7 @@ class Test
 expose new Test(), remote
 .then -> remote.speak 'hello'
 
-remote.prespeak = -> 
+remote.prespeak = -> # called by HTML button
   remote.speak $('#m').val()
   $('#m').val('')
 

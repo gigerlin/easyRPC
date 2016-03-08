@@ -3,7 +3,7 @@ RPC made easy for browser
 
 This tiny library allows to easily invoke methods on remote objects from a web browser via an HTTP request. It uses the browser native fetch function (cf. [Fetch API](https://developer.mozilla.org/en/docs/Web/API/Fetch_API "Fetch API") for browser compatibility). Polyfills are provided for browser which do not support fetch or Promise.
 
-It uses also the native HTML5 EventSource to allow server to invoke methods on client obects. The example provided is a very simple chat application.
+It uses also the native HTML5 EventSource to allow server to invoke methods on client objects. The example provided is a very simple chat application.
 
 ### Installation
 `npm install avs-easyrpc`
@@ -150,7 +150,7 @@ module.exports = remote = new Remote class:'Employee', methods:['getProfile', 's
 expose new Test(), remote
 .then -> remote.speak 'hello'
 
-remote.prespeak = -> 
+remote.prespeak = -> # called by HTML button
   remote.speak $('#m').val()
   $('#m').val('') 
 ```  
