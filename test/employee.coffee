@@ -12,6 +12,11 @@ count = 0 # automatic naming of members
 
 module.exports = class Employee
 
+  speak: (msg) ->
+    unless @alias then chat[@alias = "joe-#{++count}"] = @ 
+    chat[member].remote.echo @alias, msg for member of chat # broadcast to every member
+    'OK'
+
   getProfile: (name) -> 
     new Promise (resolve, reject) ->
       setTimeout (-> resolve age:32, email:'john@acme.com'), 3000 
@@ -20,10 +25,6 @@ module.exports = class Employee
     @remote = new Remote channel:channel, methods:['echo'] # client exposes the echo method
     'OK'
 
-  speak: (msg) ->
-    unless @alias then chat[@alias = "joe-#{++count}"] = @ 
-    chat[member].remote.echo @alias, msg for member of chat # broadcast to every member
-    'OK'
     
 
 

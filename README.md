@@ -3,6 +3,8 @@ RPC made easy for browser
 
 This tiny library allows to easily invoke methods on remote objects from a web browser via an HTTP request. It uses the browser native fetch function (cf. [Fetch API](https://developer.mozilla.org/en/docs/Web/API/Fetch_API "Fetch API") for browser compatibility). Polyfills are provided for browser which do not support fetch or Promise.
 
+It uses also the native HTML5 EventSource to allow server to invoke methods on client obects. The example provided is a very simple chat application.
+
 ### Installation
 `npm install avs-easyrpc`
 
@@ -119,4 +121,36 @@ Errors are reported from the server to the browser. For example, publish is not 
 ### Test
 A minimalist sample is provided for test purpose. It includes all necessary files, in coffeescript and javascript format. The html file uses a browserified javascript file (test.min.js), that can be obtained via the command line:
 
-`browserify -i ./node_modules/avs-easyrpc/js/rpc.js test.js > test.min.js`
+`browserify -i ./node_modules/avs-easyrpc/js/rpc.js -s LS test.js > test.min.js`
+
+The sample is a chat application which demoes calls from client to server (speak) and from server to clients (echo). Here is the coffeescript server side of the chat application:
+
+```javascript
+chat = [] # the list of all members
+count = 0 # automatic naming of members
+
+module.exports = class Employee
+
+  speak: (msg) ->
+    unless @alias then chat[@alias = "joe-#{++count}"] = @ 
+    chat[member].remote.echo @alias, msg for member of chat # broadcast to every member
+    'OK'
+```
+
+On the client side:
+
+```javascript
+class Test
+  echo: (user, text...) -> 
+    console.log "#{user}:", text...
+    $('#messages').append($('<li>').text("#{user}:#{text[0]}"))
+
+module.exports = remote = new Remote class:'Employee', methods:['getProfile', 'speak']
+
+expose new Test(), remote
+.then -> remote.speak 'hello'
+
+remote.prespeak = -> 
+  remote.speak $('#m').val()
+  $('#m').val('') 
+```  
