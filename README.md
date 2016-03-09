@@ -3,7 +3,7 @@ RPC made easy for browser
 
 This tiny library allows to easily invoke methods on remote objects from a web browser via an HTTP request. It uses the browser native fetch function (cf. [Fetch API](https://developer.mozilla.org/en/docs/Web/API/Fetch_API "Fetch API") for browser compatibility). Polyfills are provided for browser which do not support fetch or Promise.
 
-Communication from the server to the clients is also supported via the native HTML5 EventSource. This allows the server to invoke methods on client objects. The example provided is a very simple chat application.
+Communication from the server to the clients is also supported via the native HTML5 EventSource (also known as Server-Side Event, SSE). This allows the server to invoke methods on client objects. The example provided is a very simple chat application.
 
 Since it is based on pure HTTP, it should pass through main corporate firewalls.
 
@@ -71,6 +71,8 @@ Employee.prototype.getProfile = function(name) {
 module.exports = Employee;
 ```
 All methods of class Employee will be **automatically** exposed but the constructor and the methods beginning with '_' (those are seen as private methods).
+
+A reserved method **__sse** is used for SSE support (cf. chat example for detail).
 
 If a method is asynchronous, meaning it does not return a result synchronously, a Promise mut be returned. For example:
 
@@ -152,7 +154,8 @@ count = 0 # automatic naming of members
 module.exports = class Employee
 
   speak: (msg) ->
-    unless @alias then chat[@alias = "joe-#{++count}"] = @ 
+    delete chat[member] for member of chat when chat[member].channel.closed # remove members who left
+    unless @alias then chat[@alias = "joe-#{++count}"] = @  # join the chat
     chat[member].remote.echo @alias, msg for member of chat # broadcast to every member
     'OK'
     
