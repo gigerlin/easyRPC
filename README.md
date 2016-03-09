@@ -5,6 +5,8 @@ This tiny library allows to easily invoke methods on remote objects from a web b
 
 Communication from the server to the clients is also supported via the native HTML5 EventSource. This allows the server to invoke methods on client objects. The example provided is a very simple chat application.
 
+Since it is based on pure HTTP, it should pass through main corporate firewalls.
+
 ### Installation
 `npm install avs-easyrpc`
 
@@ -123,7 +125,7 @@ A minimalist sample is provided for test purpose. It includes all necessary file
 
 `browserify -i ./node_modules/avs-easyrpc/js/rpc.js -s LS test.js > test.min.js`
 
-The sample is a chat application which demoes calls from client to server (speak) and from server to clients (echo). Here is the coffeescript **server side** of the chat application:
+The sample is a chat application which demoes calls from client to server (speak) and from server to clients (echo). Here is the coffeescript **server side** of the chat application (file employee.coffee):
 
 ```javascript
 chat = [] # the list of all members
@@ -137,7 +139,7 @@ module.exports = class Employee
     'OK'
 ```
 
-On the **client side**:
+On the **client side** (file test.coffee):
 
 ```javascript
 class Test
