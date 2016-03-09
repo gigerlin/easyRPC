@@ -36,7 +36,7 @@ remote.getProfile('john').then(function(rep) {
   console.log(err);
 });
 ```
-Each remote object is allocated a unique session ID (see the debug section for details). Several remote objects can be created on the same remote class. They will all get a unique session ID. For example, one can create Bob and Alice are remote employees. Bob and Alice will have their own data and sessions...
+Each remote object is allocated a unique session ID (see the debug section for details). Several remote objects can be created on the same remote class. They will all get a unique session ID. For example, one can create Bob and Alice as remote employees. Bob and Alice will have their own data and sessions...
 
 ### Server Side
 On the server side, a server is required to instantiate the requested remote objects and process the method invocations. The server is based upon the express web framework.
