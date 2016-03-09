@@ -145,7 +145,7 @@ class Test
     console.log "#{user}:", text...
     $('#messages').append($('<li>').text("#{user}:#{text[0]}"))
 
-module.exports = remote = new Remote class:'Employee', methods:['getProfile', 'speak']
+module.exports = remote = new Remote class:'Employee', methods:['speak']
 
 expose new Test(), remote
 .then -> remote.speak 'hello'
