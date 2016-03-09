@@ -4,7 +4,6 @@
 ###
 
 parser = require('body-parser')
-
 Channel = require('./sse').Channel
 
 if typeof Promise is 'undefined' then Promise = require './promise'
@@ -12,7 +11,6 @@ if typeof Promise is 'undefined' then Promise = require './promise'
 #
 # Server Side
 #
-
 log = require './log'
 sessionTimeOut = 30 * 60 * 1000 # 30 minutes
 tag = 'rpc'
@@ -35,38 +33,28 @@ class Rpc # inspired from minimum-rpc
 
   _return: (msg, rep, res) ->
     log "#{msg.id} out", rep
-    res.send rep
+    res.send rep # sends response to client
     
 #
 # Class Server
 #
 class classServer # for Http POST
-  constructor: (@classes, @timeOut = sessionTimeOut) -> # list of classes that the server can instantiate
-    @methods = []
-    for Class of @classes
-      @["#{Class}.sessions"] = []
-      @methods[Class] = (method for method of @classes[Class].prototype when method.charAt(0) isnt '_' and method isnt 'constructor')
+  constructor: (classes, @timeOut = sessionTimeOut) -> # list of classes that the server can instantiate
+    @[Class] = Class:classes[Class], sessions:[] for Class of classes
 
-  process: (req, res) ->
-    Class = req.path.substring(1)
-    msg = req.body
+  process: (Class, msg, res) ->
     uid = msg.id.split('-')[0]
-    rpc = @["#{Class}.sessions"][uid]
-    @_resetTimeOut Class, rpc, uid
-    unless rpc
-      @["#{Class}.sessions"][uid] = rpc = new Rpc(new @classes[Class]())
-      @_timeOut Class, rpc, uid
-      log "adding new session #{Class} #{uid} (total: #{Object.keys(@["#{Class}.sessions"]).length})"
-
-    rpc.process msg, res
-
-  _timeOut: (Class, rpc, uid) ->
-    rpc.timeOut = setTimeout => 
-      delete @["#{Class}.sessions"][uid]
-      log "removing session #{uid} (total: #{Object.keys(@["#{Class}.sessions"])})"
+    if rpc = @[Class].sessions[uid] then clearTimeout rpc.timeOut
+    else # new session / new object
+      # @[Class].date = new Date()
+      @[Class].sessions[uid] = rpc = new Rpc new @[Class].Class()
+      log "adding new session #{Class} #{uid} (total: #{Object.keys(@[Class]).length})"
+    rpc.timeOut = setTimeout =>
+      delete @[Class].sessions[uid]
+      log "removing session #{uid} (total: #{Object.keys(@[Class]).length})"
     , @timeOut
-
-  _resetTimeOut: (Class, rpc, uid) -> if rpc then clearTimeout rpc.timeOut; @_timeOut Class, rpc, uid
+    
+    rpc.process msg, res
 
 #
 # Class expressRpc: dispatch incoming HTTP requests / class
@@ -77,9 +65,10 @@ module.exports = class expressRpc
     app.use parser.json limit:options.limit or '512kb'
     app.use (err, req, res, next) -> log err.stack; next err
     server = new classServer classes, options.timeOut
-    for Class of classes
+    ( (Class) -> 
       log "listening on class #{Class}"
-      app.post "/#{Class}", (req, res) -> server.process req, res
+      app.post "/#{Class}", (req, res) -> server.process Class, req.body, res
+    ) Class for Class of classes
 #
 # Add SSE Support
 #
