@@ -6,9 +6,11 @@
  */
 
 (function() {
-  var Promise, Rpc, channels, classServer, expressRpc, log, parser, sessionTimeOut, sse, tag;
+  var Channel, Promise, Rpc, classServer, expressRpc, log, parser, sessionTimeOut, tag;
 
   parser = require('body-parser');
+
+  Channel = require('./sse').Channel;
 
   if (typeof Promise === 'undefined') {
     Promise = require('./promise');
@@ -31,7 +33,7 @@
       if (this.local[msg.method]) {
         try {
           if (msg.method === '__sse') {
-            msg.args = [channels[msg.args[0]]];
+            msg.args = [Channel.channels[msg.args[0]]];
           }
           rep = (_ref = this.local)[msg.method].apply(_ref, msg.args);
           if (typeof rep["catch"] === 'function') {
@@ -155,32 +157,13 @@
           return server.process(req, res);
         });
       }
-      app.get("/" + tag, sse, function(req, res) {
-        var uid;
-        channels[uid = Number(new Date())] = res;
-        log('SSE channel uid:', uid);
-        res.__uid = uid;
-        return res.json({
-          uid: uid
-        });
+      app.get("/" + tag, function(req, res, next) {
+        return new Channel(req, res, next);
       });
     }
 
     return expressRpc;
 
   })();
-
-  channels = [];
-
-  sse = function(req, resp, next) {
-    resp.statusCode = 200;
-    resp.setHeader('Content-Type', 'text/event-stream');
-    resp.setHeader('Cache-Control', 'no-cache');
-    resp.setHeader('Connection', 'keep-alive');
-    resp.json = function(msg) {
-      return resp.write("event: " + tag + "\ndata: " + (JSON.stringify(msg)) + "\n\n");
-    };
-    return next();
-  };
 
 }).call(this);

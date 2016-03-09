@@ -27,22 +27,49 @@ exports.expose = (local, remote) ->
         remote.__sse msg.uid
         resolve msg.uid
     ), false
-
+###
     source.addEventListener 'error', ( (e) -> 
       log 'SSE error', e
       # source.close()
     ), false
-
+###
 #
 # server side
 #
 exports.Remote = class Remote 
   constructor: (options) -> 
-    ctx = count:0, uid:Math.random().toString().substring(2, 10)
+    unless options.channel
+      log 'SSE error: no channel for remote object create'
+      return
 
-    ( (method) => @[method] = -> send options.channel, method:method, args:[].slice.call(arguments), id:"#{ctx.uid}-#{++ctx.count}"
+    ctx = count:0, uid:Math.random().toString().substring(2, 10)
+    options.methods = options.methods or []
+
+    ( (method) => @[method] = -> options.channel.send method:method, args:[].slice.call(arguments), id:"#{ctx.uid}-#{++ctx.count}"
     ) method for method in options.methods
 
-send = (channel, msg) ->
-  log "#{msg.id} out #{channel.__uid}", msg
-  channel.json msg
+exports.Channel = class Channel
+  @channels:[]
+  constructor: (req, resp, next) ->
+    @socket = resp
+    Channel.channels[@uid = Number(new Date()).toString()] = @
+    log 'SSE new channel', @uid
+    resp.statusCode = 200
+    resp.setHeader 'Content-Type', 'text/event-stream'
+    resp.setHeader 'Cache-Control', 'no-cache'
+    resp.setHeader 'Connection', 'keep-alive'
+    resp.setHeader 'Access-Control-Allow-Origin', '*'
+    resp.json = (msg) -> resp.write "event: #{tag}\ndata: #{JSON.stringify msg}\n\n"
+    resp.json uid:@uid
+    req.on 'close', => 
+      log 'SSE channel', @uid, 'closed' 
+      delete Channel.channels[@uid]
+      @closed = true
+    next()
+
+  send: (msg) -> 
+    log "#{msg.id} out #{@uid}", msg
+    @socket.json msg
+
+
+

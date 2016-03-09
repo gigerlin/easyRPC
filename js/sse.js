@@ -6,7 +6,7 @@
  */
 
 (function() {
-  var Promise, Remote, log, send, tag;
+  var Channel, Promise, Remote, log, tag;
 
   log = require('./log');
 
@@ -24,7 +24,7 @@
         reject(err);
       }
       source = new EventSource(tag);
-      source.addEventListener(tag, (function(e) {
+      return source.addEventListener(tag, (function(e) {
         var msg;
         log('SSE in', e.data);
         msg = JSON.parse(e.data);
@@ -35,24 +35,34 @@
           return resolve(msg.uid);
         }
       }), false);
-      return source.addEventListener('error', (function(e) {
-        return log('SSE error', e);
-      }), false);
     });
   };
+
+
+  /*
+      source.addEventListener 'error', ( (e) -> 
+        log 'SSE error', e
+         * source.close()
+      ), false
+   */
 
   exports.Remote = Remote = (function() {
     function Remote(options) {
       var ctx, method, _fn, _i, _len, _ref;
+      if (!options.channel) {
+        log('SSE error: no channel for remote object create');
+        return;
+      }
       ctx = {
         count: 0,
         uid: Math.random().toString().substring(2, 10)
       };
+      options.methods = options.methods || [];
       _ref = options.methods;
       _fn = (function(_this) {
         return function(method) {
           return _this[method] = function() {
-            return send(options.channel, {
+            return options.channel.send({
               method: method,
               args: [].slice.call(arguments),
               id: "" + ctx.uid + "-" + (++ctx.count)
@@ -70,9 +80,41 @@
 
   })();
 
-  send = function(channel, msg) {
-    log("" + msg.id + " out " + channel.__uid, msg);
-    return channel.json(msg);
-  };
+  exports.Channel = Channel = (function() {
+    Channel.channels = [];
+
+    function Channel(req, resp, next) {
+      this.socket = resp;
+      Channel.channels[this.uid = Number(new Date()).toString()] = this;
+      log('SSE new channel', this.uid);
+      resp.statusCode = 200;
+      resp.setHeader('Content-Type', 'text/event-stream');
+      resp.setHeader('Cache-Control', 'no-cache');
+      resp.setHeader('Connection', 'keep-alive');
+      resp.setHeader('Access-Control-Allow-Origin', '*');
+      resp.json = function(msg) {
+        return resp.write("event: " + tag + "\ndata: " + (JSON.stringify(msg)) + "\n\n");
+      };
+      resp.json({
+        uid: this.uid
+      });
+      req.on('close', (function(_this) {
+        return function() {
+          log('SSE channel', _this.uid, 'closed');
+          delete Channel.channels[_this.uid];
+          return _this.closed = true;
+        };
+      })(this));
+      next();
+    }
+
+    Channel.prototype.send = function(msg) {
+      log("" + msg.id + " out " + this.uid, msg);
+      return this.socket.json(msg);
+    };
+
+    return Channel;
+
+  })();
 
 }).call(this);

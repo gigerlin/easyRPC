@@ -9,6 +9,9 @@ if typeof window is 'object' # for Safari & IE
   fetch = window.fetch or require './fetch'
   Promise = window.Promise or require './promise'
 
+#
+# Client Side
+#
 module.exports = class Remote 
   constructor: (options) -> 
     ctx = count:0, uid:Math.random().toString().substring(2, 10), request:"#{options.url or location.origin}/#{options.class}"

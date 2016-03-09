@@ -3,7 +3,7 @@ RPC made easy for browser
 
 This tiny library allows to easily invoke methods on remote objects from a web browser via an HTTP request. It uses the browser native fetch function (cf. [Fetch API](https://developer.mozilla.org/en/docs/Web/API/Fetch_API "Fetch API") for browser compatibility). Polyfills are provided for browser which do not support fetch or Promise.
 
-It uses also the native HTML5 EventSource to allow server to invoke methods on client objects. The example provided is a very simple chat application.
+Communication from the server to the clients is also supported via the native HTML5 EventSource. This allows the server to invoke methods on client objects. The example provided is a very simple chat application.
 
 ### Installation
 `npm install avs-easyrpc`
@@ -118,12 +118,12 @@ Errors are reported from the server to the browser. For example, publish is not 
 
 2016-03-06 14:51:03 rpc 88487158-2: in {"err":"error: method publish is unknown"}
 
-### Test
+### Test - Chat Application
 A minimalist sample is provided for test purpose. It includes all necessary files, in coffeescript and javascript format. The html file uses a browserified javascript file (test.min.js), that can be obtained via the command line:
 
 `browserify -i ./node_modules/avs-easyrpc/js/rpc.js -s LS test.js > test.min.js`
 
-The sample is a chat application which demoes calls from client to server (speak) and from server to clients (echo). Here is the coffeescript server side of the chat application:
+The sample is a chat application which demoes calls from client to server (speak) and from server to clients (echo). Here is the coffeescript **server side** of the chat application:
 
 ```javascript
 chat = [] # the list of all members
@@ -137,11 +137,11 @@ module.exports = class Employee
     'OK'
 ```
 
-On the client side:
+On the **client side**:
 
 ```javascript
 class Test
-  echo: (user, text...) -> 
+  echo: (user, text...) -> # the method invoked by the server 
     console.log "#{user}:", text...
     $('#messages').append($('<li>').text("#{user}:#{text[0]}"))
 
