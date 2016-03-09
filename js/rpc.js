@@ -6,11 +6,9 @@
  */
 
 (function() {
-  var Channel, Promise, Rpc, classServer, expressRpc, log, parser, sessionTimeOut, tag;
+  var Channel, Promise, Remote, Rpc, classServer, expressRpc, log, parser, sessionTimeOut, sse, tag;
 
   parser = require('body-parser');
-
-  Channel = require('./sse').Channel;
 
   if (typeof Promise === 'undefined') {
     Promise = require('./promise');
@@ -18,9 +16,11 @@
 
   log = require('./log');
 
-  sessionTimeOut = 30 * 60 * 1000;
-
   tag = 'rpc';
+
+  sse = '__sse';
+
+  sessionTimeOut = 30 * 60 * 1000;
 
   Rpc = (function() {
     function Rpc(local) {
@@ -32,7 +32,7 @@
       log("" + msg.id + " in", msg);
       if (this.local[msg.method]) {
         try {
-          if (msg.method === '__sse') {
+          if (msg.method === sse) {
             msg.args = [Channel.channels[msg.args[0]]];
           }
           rep = (_ref = this.local)[msg.method].apply(_ref, msg.args);
@@ -112,7 +112,7 @@
 
   })();
 
-  module.exports = expressRpc = (function() {
+  exports.expressRpc = expressRpc = (function() {
     function expressRpc(app, classes, options) {
       var Class, server, _fn;
       if (options == null) {
@@ -144,6 +144,74 @@
     }
 
     return expressRpc;
+
+  })();
+
+  exports.Remote = Remote = (function() {
+    function Remote(options) {
+      var ctx, method, _fn, _i, _len, _ref;
+      if (!options.channel) {
+        log('SSE error: no channel for remote object create');
+        return;
+      }
+      ctx = {
+        count: 0,
+        uid: Math.random().toString().substring(2, 10)
+      };
+      options.methods = options.methods || [];
+      _ref = options.methods;
+      _fn = (function(_this) {
+        return function(method) {
+          return _this[method] = function() {
+            return options.channel.send({
+              method: method,
+              args: [].slice.call(arguments),
+              id: "" + ctx.uid + "-" + (++ctx.count)
+            });
+          };
+        };
+      })(this);
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        method = _ref[_i];
+        _fn(method);
+      }
+    }
+
+    return Remote;
+
+  })();
+
+  exports.Channel = Channel = (function() {
+    Channel.channels = [];
+
+    function Channel(req, resp, next) {
+      this.socket = resp;
+      Channel.channels[this.uid = Number(new Date()).toString()] = this;
+      resp.statusCode = 200;
+      resp.setHeader('Content-Type', 'text/event-stream');
+      resp.setHeader('Cache-Control', 'no-cache');
+      resp.setHeader('Connection', 'keep-alive');
+      resp.setHeader('Access-Control-Allow-Origin', '*');
+      req.on('close', (function(_this) {
+        return function() {
+          log('SSE', _this.uid, 'closed');
+          delete Channel.channels[_this.uid];
+          return _this.closed = true;
+        };
+      })(this));
+      this.send({
+        uid: this.uid,
+        id: 'SSE'
+      });
+      next();
+    }
+
+    Channel.prototype.send = function(msg) {
+      log("" + msg.id + " out " + this.uid, msg);
+      return this.socket.write("event: " + tag + "\ndata: " + (JSON.stringify(msg)) + "\n\n");
+    };
+
+    return Channel;
 
   })();
 

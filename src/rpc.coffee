@@ -4,7 +4,6 @@
 ###
 
 parser = require('body-parser')
-Channel = require('./sse').Channel
 
 if typeof Promise is 'undefined' then Promise = require './promise'
 
@@ -12,8 +11,9 @@ if typeof Promise is 'undefined' then Promise = require './promise'
 # Server Side
 #
 log = require './log'
-sessionTimeOut = 30 * 60 * 1000 # 30 minutes
 tag = 'rpc'
+sse = '__sse'
+sessionTimeOut = 30 * 60 * 1000 # 30 minutes
 
 class Rpc # inspired from minimum-rpc
   constructor: (@local) ->
@@ -22,7 +22,7 @@ class Rpc # inspired from minimum-rpc
     log "#{msg.id} in", msg
     if @local[msg.method]
       try
-        msg.args = [Channel.channels[msg.args[0]]] if msg.method is '__sse' # SSE Support
+        msg.args = [Channel.channels[msg.args[0]]] if msg.method is sse # SSE Support
         rep = @local[msg.method] msg.args...
         if typeof rep.catch is 'function' # rep instanceof Promise
           rep.then (rep) =>  @_return msg, rep:rep, res
@@ -43,7 +43,7 @@ class classServer # for Http POST
     @[Class] = Class:classes[Class], sessions:[] for Class of classes
 
   process: (Class, msg, res) ->
-    uid = msg.id.split('-')[0]
+    uid = msg.id.split('-')[0] # get session ID
     if rpc = @[Class].sessions[uid] then clearTimeout rpc.timeOut
     else # new session / new object
       # @[Class].date = new Date()
@@ -54,12 +54,12 @@ class classServer # for Http POST
       log "removing session #{uid} (total: #{Object.keys(@[Class]).length})"
     , @timeOut
     
-    rpc.process msg, res
+    rpc.process msg, res # at last process the message
 
 #
 # Class expressRpc: dispatch incoming HTTP requests / class
 #
-module.exports = class expressRpc
+exports.expressRpc = class expressRpc
   constructor: (app, classes, options = {}) ->
     process.on 'uncaughtException', (err) -> log 'Caught exception: ', err.stack
     app.use parser.json limit:options.limit or '512kb'
@@ -73,3 +73,38 @@ module.exports = class expressRpc
 # Add SSE Support
 #
     app.get "/#{tag}", (req, res, next) -> new Channel req, res, next
+
+exports.Remote = class Remote 
+  constructor: (options) -> 
+    unless options.channel
+      log 'SSE error: no channel for remote object create'
+      return
+
+    ctx = count:0, uid:Math.random().toString().substring(2, 10)
+    options.methods = options.methods or []
+
+    ( (method) => @[method] = -> options.channel.send method:method, args:[].slice.call(arguments), id:"#{ctx.uid}-#{++ctx.count}"
+    ) method for method in options.methods
+
+exports.Channel = class Channel
+  @channels:[]
+  constructor: (req, resp, next) ->
+    @socket = resp
+    Channel.channels[@uid = Number(new Date()).toString()] = @
+    resp.statusCode = 200
+    resp.setHeader 'Content-Type', 'text/event-stream'
+    resp.setHeader 'Cache-Control', 'no-cache'
+    resp.setHeader 'Connection', 'keep-alive'
+    resp.setHeader 'Access-Control-Allow-Origin', '*'
+    req.on 'close', => 
+      log 'SSE', @uid, 'closed' 
+      delete Channel.channels[@uid]
+      @closed = true
+    @send uid:@uid, id:'SSE'
+    next()
+
+  send: (msg) -> 
+    log "#{msg.id} out #{@uid}", msg
+    @socket.write "event: #{tag}\ndata: #{JSON.stringify msg}\n\n"
+
+

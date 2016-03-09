@@ -3,20 +3,22 @@
   Copyright 2016. All rights reserved.
 ###
 
-log = require './log'
-
 if typeof window is 'object' # for Safari & IE
   fetch = window.fetch or require './fetch'
   Promise = window.Promise or require './promise'
 
+log = require './log'
+tag = 'rpc'
+sse = '__sse'
+
 #
 # Client Side
 #
-module.exports = class Remote 
+exports.Remote = class Remote 
   constructor: (options) -> 
     ctx = count:0, uid:Math.random().toString().substring(2, 10), request:"#{options.url or location.origin}/#{options.class}"
     options.methods = options.methods or []
-    options.methods.push '__sse' # SSE support
+    options.methods.push sse # SSE support
 
     ( (method) => @[method] = -> send ctx.request, method:method, args:[].slice.call(arguments), id:"#{ctx.uid}-#{++ctx.count}"
     ) method for method in options.methods
@@ -30,3 +32,21 @@ send = (request, msg) ->
     .then (rep) -> if rep
       log "#{msg.id} in", rep    
       if rep.err then reject rep.err else resolve rep.rep
+
+#
+# SSE Support
+#
+exports.expose = (local, remote) -> new Promise (resolve, reject) ->
+  unless remote
+    log err = 'SSE error: no remote object to create channel' 
+    reject err
+  
+  source = new EventSource tag
+  source.addEventListener tag, (e) -> 
+    log 'SSE in', e.data 
+    msg = JSON.parse e.data
+    if msg.method then local[msg.method] msg.args...
+    else if msg.uid # tell the remote object on the server which channel to use
+      remote[sse] msg.uid
+      resolve msg.uid
+  , false

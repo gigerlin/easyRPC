@@ -6,16 +6,20 @@
  */
 
 (function() {
-  var Promise, Remote, fetch, log, send;
-
-  log = require('./log');
+  var Promise, Remote, fetch, log, send, sse, tag;
 
   if (typeof window === 'object') {
     fetch = window.fetch || require('./fetch');
     Promise = window.Promise || require('./promise');
   }
 
-  module.exports = Remote = (function() {
+  log = require('./log');
+
+  tag = 'rpc';
+
+  sse = '__sse';
+
+  exports.Remote = Remote = (function() {
     function Remote(options) {
       var ctx, method, _fn, _i, _len, _ref;
       ctx = {
@@ -24,7 +28,7 @@
         request: "" + (options.url || location.origin) + "/" + options["class"]
       };
       options.methods = options.methods || [];
-      options.methods.push('__sse');
+      options.methods.push(sse);
       _ref = options.methods;
       _fn = (function(_this) {
         return function(method) {
@@ -73,6 +77,28 @@
           }
         }
       });
+    });
+  };
+
+  exports.expose = function(local, remote) {
+    return new Promise(function(resolve, reject) {
+      var err, source;
+      if (!remote) {
+        log(err = 'SSE error: no remote object to create channel');
+        reject(err);
+      }
+      source = new EventSource(tag);
+      return source.addEventListener(tag, function(e) {
+        var msg;
+        log('SSE in', e.data);
+        msg = JSON.parse(e.data);
+        if (msg.method) {
+          return local[msg.method].apply(local, msg.args);
+        } else if (msg.uid) {
+          remote[sse](msg.uid);
+          return resolve(msg.uid);
+        }
+      }, false);
     });
   };
 

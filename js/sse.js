@@ -24,7 +24,7 @@
         reject(err);
       }
       source = new EventSource(tag);
-      return source.addEventListener(tag, (function(e) {
+      return source.addEventListener(tag, function(e) {
         var msg;
         log('SSE in', e.data);
         msg = JSON.parse(e.data);
@@ -34,7 +34,7 @@
           remote.__sse(msg.uid);
           return resolve(msg.uid);
         }
-      }), false);
+      }, false);
     });
   };
 

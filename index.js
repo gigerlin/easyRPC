@@ -1,8 +1,8 @@
-exports.Remote = require('./js/easyRpc');
-exports.Server = require('./js/rpc');
+exports.Remote = require('./js/easyRpc').Remote;
+exports.expose = require('./js/easyRpc').expose;
 
-exports.expose = require('./js/sse').expose;
-exports.sseRemote = require('./js/sse').Remote;
+exports.Server = require('./js/rpc').expressRpc;
+exports.sseRemote = require('./js/rpc').Remote;
 
 exports.log = require('./js/log');
 
