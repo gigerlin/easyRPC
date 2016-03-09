@@ -14,7 +14,7 @@ module.exports = class Employee
 
   speak: (msg) ->
     delete chat[member] for member of chat when chat[member].channel.closed # remove members who left
-    unless @alias then chat[@alias = "joe-#{++count}"] = @ 
+    unless @alias then chat[@alias = "joe-#{++count}"] = @  # join the chat
     chat[member].remote.echo @alias, msg for member of chat # broadcast to every member
     'OK'
 
