@@ -57,17 +57,14 @@ exports.Channel = class Channel
     resp.setHeader 'Cache-Control', 'no-cache'
     resp.setHeader 'Connection', 'keep-alive'
     resp.setHeader 'Access-Control-Allow-Origin', '*'
-    resp.json = (msg) -> resp.write "event: #{tag}\ndata: #{JSON.stringify msg}\n\n"
-    resp.json uid:@uid
     req.on 'close', => 
       log 'SSE channel', @uid, 'closed' 
       delete Channel.channels[@uid]
       @closed = true
+    @send uid:@uid
     next()
 
   send: (msg) -> 
     log "#{msg.id} out #{@uid}", msg
-    @socket.json msg
-
-
+    @socket.write "event: #{tag}\ndata: #{JSON.stringify msg}\n\n"
 
