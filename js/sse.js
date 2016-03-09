@@ -40,10 +40,10 @@
 
 
   /*
-      source.addEventListener 'error', ( (e) -> 
-        log 'SSE error', e
-         * source.close()
-      ), false
+    source.addEventListener 'error', ( (e) -> 
+      log 'SSE error', e
+       * source.close()
+    ), false
    */
 
   exports.Remote = Remote = (function() {
@@ -86,31 +86,28 @@
     function Channel(req, resp, next) {
       this.socket = resp;
       Channel.channels[this.uid = Number(new Date()).toString()] = this;
-      log('SSE new channel', this.uid);
       resp.statusCode = 200;
       resp.setHeader('Content-Type', 'text/event-stream');
       resp.setHeader('Cache-Control', 'no-cache');
       resp.setHeader('Connection', 'keep-alive');
       resp.setHeader('Access-Control-Allow-Origin', '*');
-      resp.json = function(msg) {
-        return resp.write("event: " + tag + "\ndata: " + (JSON.stringify(msg)) + "\n\n");
-      };
-      resp.json({
-        uid: this.uid
-      });
       req.on('close', (function(_this) {
         return function() {
-          log('SSE channel', _this.uid, 'closed');
+          log('SSE', _this.uid, 'closed');
           delete Channel.channels[_this.uid];
           return _this.closed = true;
         };
       })(this));
+      this.send({
+        uid: this.uid,
+        id: 'SSE'
+      });
       next();
     }
 
     Channel.prototype.send = function(msg) {
       log("" + msg.id + " out " + this.uid, msg);
-      return this.socket.json(msg);
+      return this.socket.write("event: " + tag + "\ndata: " + (JSON.stringify(msg)) + "\n\n");
     };
 
     return Channel;

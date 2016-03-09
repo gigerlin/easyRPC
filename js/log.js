@@ -11,7 +11,7 @@
   module.exports = function() {
     var text;
     text = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-    return console.log.apply(console, [new Date().toLocaleString(), 'rpc'].concat(__slice.call(text)));
+    return console.log.apply(console, [new Date().toLocaleString(), '|'].concat(__slice.call(text)));
   };
 
 }).call(this);

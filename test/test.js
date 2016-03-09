@@ -12,17 +12,6 @@
     methods: ['getProfile', 'speak']
   });
 
-
-  /*
-  remote.getProfile 'john'
-  .then (rep) -> console.log rep
-  .catch (err) -> console.log err
-  
-  remote.publish()
-  .then (rep) -> console.log rep
-  .catch (err) -> console.log err
-   */
-
   Test = (function() {
     function Test() {}
 
@@ -45,5 +34,16 @@
     remote.speak($('#m').val());
     return $('#m').val('');
   };
+
+
+  /*
+  remote.getProfile 'john'
+  .then (rep) -> console.log rep
+  .catch (err) -> console.log err
+  
+  remote.publish()
+  .then (rep) -> console.log rep
+  .catch (err) -> console.log err
+   */
 
 }).call(this);

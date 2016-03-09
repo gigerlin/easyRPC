@@ -14,5 +14,5 @@ port = 4145
 http.createServer store
 .listen port, -> 
   console.log "Server started at #{port}", new Date()
-  new expressRpc store, { Employee:require('./employee') }, timeOut:10 * 60 * 1000
+  new expressRpc store, { Employee:require('./employee'), Customer:require('./customer') }, timeOut:10 * 60 * 1000
 

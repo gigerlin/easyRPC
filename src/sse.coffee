@@ -51,17 +51,16 @@ exports.Channel = class Channel
   constructor: (req, resp, next) ->
     @socket = resp
     Channel.channels[@uid = Number(new Date()).toString()] = @
-    log 'SSE new channel', @uid
     resp.statusCode = 200
     resp.setHeader 'Content-Type', 'text/event-stream'
     resp.setHeader 'Cache-Control', 'no-cache'
     resp.setHeader 'Connection', 'keep-alive'
     resp.setHeader 'Access-Control-Allow-Origin', '*'
     req.on 'close', => 
-      log 'SSE channel', @uid, 'closed' 
+      log 'SSE', @uid, 'closed' 
       delete Channel.channels[@uid]
       @closed = true
-    @send uid:@uid
+    @send uid:@uid, id:'SSE'
     next()
 
   send: (msg) -> 

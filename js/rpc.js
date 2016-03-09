@@ -80,54 +80,32 @@
 
   classServer = (function() {
     function classServer(classes, timeOut) {
-      var Class, method;
-      this.classes = classes;
+      var Class;
       this.timeOut = timeOut != null ? timeOut : sessionTimeOut;
-      this.methods = [];
-      for (Class in this.classes) {
-        this["" + Class + ".sessions"] = [];
-        this.methods[Class] = (function() {
-          var _results;
-          _results = [];
-          for (method in this.classes[Class].prototype) {
-            if (method.charAt(0) !== '_' && method !== 'constructor') {
-              _results.push(method);
-            }
-          }
-          return _results;
-        }).call(this);
+      for (Class in classes) {
+        this[Class] = {
+          Class: classes[Class],
+          sessions: []
+        };
       }
     }
 
-    classServer.prototype.process = function(req, res) {
-      var Class, msg, rpc, uid;
-      Class = req.path.substring(1);
-      msg = req.body;
+    classServer.prototype.process = function(Class, msg, res) {
+      var rpc, uid;
       uid = msg.id.split('-')[0];
-      rpc = this["" + Class + ".sessions"][uid];
-      this._resetTimeOut(Class, rpc, uid);
-      if (!rpc) {
-        this["" + Class + ".sessions"][uid] = rpc = new Rpc(new this.classes[Class]());
-        this._timeOut(Class, rpc, uid);
-        log("adding new session " + Class + " " + uid + " (total: " + (Object.keys(this["" + Class + ".sessions"]).length) + ")");
+      if (rpc = this[Class].sessions[uid]) {
+        clearTimeout(rpc.timeOut);
+      } else {
+        this[Class].sessions[uid] = rpc = new Rpc(new this[Class].Class());
+        log("adding new session " + Class + " " + uid + " (total: " + (Object.keys(this[Class]).length) + ")");
       }
-      return rpc.process(msg, res);
-    };
-
-    classServer.prototype._timeOut = function(Class, rpc, uid) {
-      return rpc.timeOut = setTimeout((function(_this) {
+      rpc.timeOut = setTimeout((function(_this) {
         return function() {
-          delete _this["" + Class + ".sessions"][uid];
-          return log("removing session " + uid + " (total: " + (Object.keys(_this["" + Class + ".sessions"])) + ")");
+          delete _this[Class].sessions[uid];
+          return log("removing session " + uid + " (total: " + (Object.keys(_this[Class]).length) + ")");
         };
       })(this), this.timeOut);
-    };
-
-    classServer.prototype._resetTimeOut = function(Class, rpc, uid) {
-      if (rpc) {
-        clearTimeout(rpc.timeOut);
-        return this._timeOut(Class, rpc, uid);
-      }
+      return rpc.process(msg, res);
     };
 
     return classServer;
@@ -136,7 +114,7 @@
 
   module.exports = expressRpc = (function() {
     function expressRpc(app, classes, options) {
-      var Class, server;
+      var Class, server, _fn;
       if (options == null) {
         options = {};
       }
@@ -151,11 +129,14 @@
         return next(err);
       });
       server = new classServer(classes, options.timeOut);
-      for (Class in classes) {
+      _fn = function(Class) {
         log("listening on class " + Class);
-        app.post("/" + Class, function(req, res) {
-          return server.process(req, res);
+        return app.post("/" + Class, function(req, res) {
+          return server.process(Class, req.body, res);
         });
+      };
+      for (Class in classes) {
+        _fn(Class);
       }
       app.get("/" + tag, function(req, res, next) {
         return new Channel(req, res, next);
