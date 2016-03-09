@@ -125,7 +125,25 @@ A minimalist sample is provided for test purpose. It includes all necessary file
 
 `browserify -i ./node_modules/avs-easyrpc/js/rpc.js -s LS test.js > test.min.js`
 
-The sample is a chat application which demoes calls from client to server (speak) and from server to clients (echo). Here is the coffeescript **server side** of the chat application (file employee.coffee):
+The sample is a chat application which demoes calls from client to server (speak) and from server to clients (echo). Here is the coffeescript **client side** of the chat application (file test.coffee):
+
+```javascript
+class Test
+  echo: (user, text...) -> # the method invoked by the server 
+    console.log "#{user}:", text...
+    $('#messages').append($('<li>').text("#{user}:#{text[0]}"))
+
+module.exports = remote = new Remote class:'Employee', methods:['speak']
+
+expose new Test(), remote # this starts the SSE so that the Test object can be invoked
+.then -> remote.speak 'hello'
+
+remote.prespeak = -> # called by HTML button
+  remote.speak $('#m').val()
+  $('#m').val('') 
+```
+
+On the **server side** (file employee.coffee):
 
 ```javascript
 chat = [] # the list of all members
@@ -137,22 +155,8 @@ module.exports = class Employee
     unless @alias then chat[@alias = "joe-#{++count}"] = @ 
     chat[member].remote.echo @alias, msg for member of chat # broadcast to every member
     'OK'
-```
-
-On the **client side** (file test.coffee):
-
-```javascript
-class Test
-  echo: (user, text...) -> # the method invoked by the server 
-    console.log "#{user}:", text...
-    $('#messages').append($('<li>').text("#{user}:#{text[0]}"))
-
-module.exports = remote = new Remote class:'Employee', methods:['speak']
-
-expose new Test(), remote
-.then -> remote.speak 'hello'
-
-remote.prespeak = -> # called by HTML button
-  remote.speak $('#m').val()
-  $('#m').val('') 
+    
+  __sse: (@channel) -> # the __sse method is required to get the SSE channel 
+    @remote = new Remote channel:@channel, methods:['echo'] # client exposes the echo method
+    'OK'
 ```  
