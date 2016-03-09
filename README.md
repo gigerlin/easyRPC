@@ -96,13 +96,13 @@ new expressRpc(test, {
 ### Debug
 Outgoing and incoming messages are logged to the console on both sides.
 
-#### Browser Example
+#### Browser Side
 
 2016-03-06 14:51:03 rpc 88487158-1: out {"method":"getProfile","args":["john"],"id":"88487158-1"}
 
 2016-03-06 14:51:03 rpc 88487158-1: in {"rep":{"age":32,"email":"john@acme.com"}}
 
-#### Server example
+#### Server Side
 
 2016-03-06 14:51:03 rpc adding new session Employee 88487158
 
