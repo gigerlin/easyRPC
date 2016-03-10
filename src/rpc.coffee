@@ -40,23 +40,23 @@ class Rpc # inspired from minimum-rpc
 #
 class classServer # for Http POST
   constructor: (classes, @timeOut = sessionTimeOut) -> # list of classes that the server can instantiate
-    @[Class] = Class:classes[Class], sessions:[] for Class of classes
+    @["def #{Class}"] = Class:classes[Class], sessions:[] for Class of classes
 
   process: (Class, msg, res) ->
     uid = msg.id.split('-')[0] # get session ID
-    if rpc = @[Class].sessions[uid] then clearTimeout rpc.timeOut
+    if rpc = @["def #{Class}"].sessions[uid] then clearTimeout rpc.timeOut
     else # new session / new object
       # @[Class].date = new Date()
-      @[Class].sessions[uid] = rpc = new Rpc new @[Class].Class[Class]()
+      @["def #{Class}"].sessions[uid] = rpc = new Rpc new @["def #{Class}"].Class[Class]()
       @_sessions Class, 'adding', uid
     rpc.timeOut = setTimeout =>
-      delete @[Class].sessions[uid]
+      delete @["def #{Class}"].sessions[uid]
       @_sessions Class, 'removing', uid
     , @timeOut
     
     rpc.process msg, res # at last process the message
 
-  _sessions: (Class, operation, uid) -> log "#{operation} #{Class} session #{uid} (# sessions: #{Object.keys(@[Class].sessions).length})"
+  _sessions: (Class, operation, uid) -> log "#{operation} #{Class} session #{uid} (# sessions: #{Object.keys(@["def #{Class}"].sessions).length})"
 
 #
 # Class expressRpc: dispatch incoming HTTP requests / class
