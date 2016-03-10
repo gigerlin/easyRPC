@@ -47,11 +47,11 @@ class classServer # for Http POST
     if rpc = @[Class].sessions[uid] then clearTimeout rpc.timeOut
     else # new session / new object
       # @[Class].date = new Date()
-      @[Class].sessions[uid] = rpc = new Rpc new @[Class].Class()
-      log "adding new session #{Class} #{uid} (total: #{Object.keys(@[Class]).length})"
+      @[Class].sessions[uid] = rpc = new Rpc new @[Class].Class[Class]()
+      log "adding new session #{Class} #{uid} (# sessions: #{Object.keys(@[Class].sessions).length})"
     rpc.timeOut = setTimeout =>
       delete @[Class].sessions[uid]
-      log "removing session #{uid} (total: #{Object.keys(@[Class]).length})"
+      log "removing session #{uid} (# sessions: #{Object.keys(@[Class].sessions).length})"
     , @timeOut
     
     rpc.process msg, res # at last process the message
@@ -86,7 +86,7 @@ exports.Remote = class Remote
     ( (method) => @[method] = -> options.channel.send method:method, args:[].slice.call(arguments), id:"#{ctx.uid}-#{++ctx.count}"
     ) method for method in options.methods
 
-exports.Channel = class Channel
+Channel = class Channel
   @channels:[]
   constructor: (req, resp, next) ->
     @socket = resp

@@ -96,13 +96,13 @@
       if (rpc = this[Class].sessions[uid]) {
         clearTimeout(rpc.timeOut);
       } else {
-        this[Class].sessions[uid] = rpc = new Rpc(new this[Class].Class());
-        log("adding new session " + Class + " " + uid + " (total: " + (Object.keys(this[Class]).length) + ")");
+        this[Class].sessions[uid] = rpc = new Rpc(new this[Class].Class[Class]());
+        log("adding new session " + Class + " " + uid + " (# sessions: " + (Object.keys(this[Class].sessions).length) + ")");
       }
       rpc.timeOut = setTimeout((function(_this) {
         return function() {
           delete _this[Class].sessions[uid];
-          return log("removing session " + uid + " (total: " + (Object.keys(_this[Class]).length) + ")");
+          return log("removing session " + uid + " (# sessions: " + (Object.keys(_this[Class].sessions).length) + ")");
         };
       })(this), this.timeOut);
       return rpc.process(msg, res);
@@ -181,7 +181,7 @@
 
   })();
 
-  exports.Channel = Channel = (function() {
+  Channel = Channel = (function() {
     Channel.channels = [];
 
     function Channel(req, resp, next) {

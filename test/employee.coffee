@@ -10,7 +10,7 @@ Remote = require('avs-easyrpc').sseRemote
 chat = [] # the list of all members
 count = 0 # automatic naming of members
 
-module.exports = class Employee
+exports.Employee = class Employee
 
   speak: (msg) ->
     delete chat[member] for member of chat when chat[member].channel.closed # remove members who left
@@ -25,9 +25,6 @@ module.exports = class Employee
   getProfile: (name) -> 
     new Promise (resolve, reject) ->
       setTimeout (-> resolve age:32, email:'john@acme.com'), 3000 
-
-
-    
 
 
     
