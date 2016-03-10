@@ -84,7 +84,7 @@
       this.timeOut = timeOut != null ? timeOut : sessionTimeOut;
       for (Class in classes) {
         this["def " + Class] = {
-          Class: classes[Class],
+          "new": classes[Class][Class],
           sessions: []
         };
       }
@@ -96,7 +96,7 @@
       if (rpc = this["def " + Class].sessions[uid]) {
         clearTimeout(rpc.timeOut);
       } else {
-        this["def " + Class].sessions[uid] = rpc = new Rpc(new this["def " + Class].Class[Class]());
+        this["def " + Class].sessions[uid] = rpc = new Rpc(new this["def " + Class]["new"]());
         this._sessions(Class, 'adding', uid);
       }
       rpc.timeOut = setTimeout((function(_this) {

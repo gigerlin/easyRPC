@@ -40,14 +40,14 @@ class Rpc # inspired from minimum-rpc
 #
 class classServer # for Http POST
   constructor: (classes, @timeOut = sessionTimeOut) -> # list of classes that the server can instantiate
-    @["def #{Class}"] = Class:classes[Class], sessions:[] for Class of classes
+    @["def #{Class}"] = Class:classes[Class][Class], sessions:[] for Class of classes # 'def Class' to allow Class = process
 
   process: (Class, msg, res) ->
     uid = msg.id.split('-')[0] # get session ID
     if rpc = @["def #{Class}"].sessions[uid] then clearTimeout rpc.timeOut
     else # new session / new object
       # @[Class].date = new Date()
-      @["def #{Class}"].sessions[uid] = rpc = new Rpc new @["def #{Class}"].Class[Class]()
+      @["def #{Class}"].sessions[uid] = rpc = new Rpc new @["def #{Class}"].Class()
       @_sessions Class, 'adding', uid
     rpc.timeOut = setTimeout =>
       delete @["def #{Class}"].sessions[uid]
