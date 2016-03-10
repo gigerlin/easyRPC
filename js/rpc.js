@@ -97,15 +97,19 @@
         clearTimeout(rpc.timeOut);
       } else {
         this[Class].sessions[uid] = rpc = new Rpc(new this[Class].Class[Class]());
-        log("adding new session " + Class + " " + uid + " (# sessions: " + (Object.keys(this[Class].sessions).length) + ")");
+        this._sessions(Class, 'adding', uid);
       }
       rpc.timeOut = setTimeout((function(_this) {
         return function() {
           delete _this[Class].sessions[uid];
-          return log("removing session " + uid + " (# sessions: " + (Object.keys(_this[Class].sessions).length) + ")");
+          return _this._sessions(Class, 'removing', uid);
         };
       })(this), this.timeOut);
       return rpc.process(msg, res);
+    };
+
+    classServer.prototype._sessions = function(Class, operation, uid) {
+      return log(operation + " " + Class + " session " + uid + " (# sessions: " + (Object.keys(this[Class].sessions).length) + ")");
     };
 
     return classServer;

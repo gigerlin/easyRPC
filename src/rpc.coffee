@@ -48,13 +48,15 @@ class classServer # for Http POST
     else # new session / new object
       # @[Class].date = new Date()
       @[Class].sessions[uid] = rpc = new Rpc new @[Class].Class[Class]()
-      log "adding new session #{Class} #{uid} (# sessions: #{Object.keys(@[Class].sessions).length})"
+      @_sessions Class, 'adding', uid
     rpc.timeOut = setTimeout =>
       delete @[Class].sessions[uid]
-      log "removing session #{uid} (# sessions: #{Object.keys(@[Class].sessions).length})"
+      @_sessions Class, 'removing', uid
     , @timeOut
     
     rpc.process msg, res # at last process the message
+
+  _sessions: (Class, operation, uid) -> log "#{operation} #{Class} session #{uid} (# sessions: #{Object.keys(@[Class].sessions).length})"
 
 #
 # Class expressRpc: dispatch incoming HTTP requests / class
