@@ -15,10 +15,12 @@ remote.prespeak = -> # called by HTML button
   remote.speak $('#m').val()
   $('#m').val('')
 
+src = null
 class Deux
-  test: (msg) -> console.log 'deux: ', msg
+  test: (msg) -> console.log 'deux: ', msg; src.close()
 
 expose new Deux(), new Remote class:'Customer'
+.then (source) -> src = source
 
 
 ###

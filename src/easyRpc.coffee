@@ -48,5 +48,5 @@ exports.expose = (local, remote) -> new Promise (resolve, reject) ->
     if msg.method then local[msg.method] msg.args...
     else if msg.uid # tell the remote object on the server which channel to use
       remote[sse] msg.uid
-      resolve msg.uid
+      resolve source # return source so that source.stop() can be called
   , false

@@ -96,7 +96,7 @@
           return local[msg.method].apply(local, msg.args);
         } else if (msg.uid) {
           remote[sse](msg.uid);
-          return resolve(msg.uid);
+          return resolve(source);
         }
       }, false);
     });
