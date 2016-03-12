@@ -94,6 +94,56 @@ new expressRpc(test, {
   Customer: require('./customer') 
 }, { timeOut: 10 * 60 * 1000 });
 ```
+### API
+#### Browser Side
+##### new Remote
+Create a remote object and invoke a method
+```javascript
+var remote = new Remote({ class:'rcn', methods:['rcm1', 'rcm2',...], url:'server'});
+remote.rcm1(p1, p2).then(function(rep){ console.log(rep); });
+```
+  + *rcn* is the name of the remote class
+  + *rcm1, rcm2, etc* are the methods that will be invoked on the remote object
+  + *url (optional) is the URL of the server. Default is location.origin*
+
+The method invocation always returns a Promise.
+
+##### expose
+Use SSE to process messages initiated by the server
+```javascript
+var local = new Local();
+expose(local, new Remote({class:'rcn'}))
+.then(function(source){ ... });
+```
++ *local* is the local object that will process the messages sent by the server
++ expose needs a remote object to send to the server the SSE channel to use (see the Server side for counterpart). No specific method is needed. Remote objects have a reserved '__sse' method which is used to send SSE channel to the server.
++ expose returns a Promise that resolves when the source is connected to the server. The source is returned so that listening to the server can be stopped by invoking `source.stop()`.
+
+#### Server Side
+##### new Server
+```javascript
+var expressRpc = require('avs-easyrpc').Server;
+new expressRpc(exp, { Employee: require('./employee') }, { timeOut: 10 * 60 * 1000, limit: '512kb' });
+```
++ *exp* is the express instance (cf. example above)
++ *{ classes }* is the object containing all the classes the server can instantiate. Each object attribute is the name of the class that will be used on the client side to request an object creation.
++ *{ options }* are timeOut, i.e. the session duration (default is 30 minutes), and limit, the maximum message capacity (for each method invocation)
+
+##### __sse
+A class may define a '__sse' method if the server needs to send data to the client via SSE.
+```javascript
+  Employee.prototype.__sse = function(channel) {
+    this.channel = channel;
+    this.remote = new Remote({
+      channel: this.channel,
+      methods: ['echo']
+    });
+    return 'OK';
+  };
+```
+The method '__sse' takes as input the SSE channel that the client is using. This channel allows the creation of a remote object on the client side (cf. the local object above) and the definition of the methods that can be invoked on the client object by the server. See the test files provided for a complete example. 
+
+Unlike the remote objects on the client side, the methods of the remote objects created on the server side (which invoke method on the client) do not return values. If values have to be returned, the standard remote objects on the client are used.
 
 ### Debug
 Outgoing and incoming messages are logged to the console on both sides.
