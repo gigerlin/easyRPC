@@ -132,14 +132,15 @@ new expressRpc(exp, { Employee: require('./employee') }, { timeOut: 10 * 60 * 10
 ##### __sse
 A class may define a '__sse' method if the server needs to send data to the client via SSE.
 ```javascript
-  Employee.prototype.__sse = function(channel) {
-    this.channel = channel;
-    this.remote = new Remote({
-      channel: this.channel,
-      methods: ['echo']
-    });
-    return 'OK';
-  };
+function Employee() {};
+Employee.prototype.__sse = function(channel) {
+  this.channel = channel;
+  this.remote = new Remote({
+    channel: this.channel,
+    methods: ['echo']
+  });
+  return 'OK';
+};
 ```
 The method '__sse' takes as input the SSE channel that the client is using. This channel allows the creation of a remote object on the client side (cf. the local object above) and the definition of the methods that can be invoked on the client object by the server. See the test files provided for a complete example. 
 
