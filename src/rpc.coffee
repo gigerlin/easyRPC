@@ -24,7 +24,7 @@ class Rpc # inspired from minimum-rpc
       try
         msg.args = [Channel.channels[msg.args[0]]] if msg.method is sse # SSE Support
         rep = @local[msg.method] msg.args...
-        if typeof rep.catch is 'function' # rep instanceof Promise
+        if rep and typeof rep.catch is 'function' # rep instanceof Promise
           rep.then (rep) =>  @_return msg, rep:rep, res
           rep.catch (err) => @_return msg, err:err, res
         else @_return msg, rep:rep, res
@@ -76,19 +76,22 @@ exports.expressRpc = class expressRpc
 #
     app.get "/#{tag}", (req, res, next) -> new Channel req, res, next
 
-exports.Remote = class Remote 
-  constructor: (options) -> 
-    unless options.channel
-      log 'SSE error: no channel for remote object create'
-      return
+exports.Remote = class Remote
+  constructor: (methods) -> @['remote methods'] = methods
 
+  __sse: (channel) -> @_remoteReady new SSE channel:channel, methods:@['remote methods']
+  _remoteReady: -> 'SSE remoteReady not defined'
+
+class SSE
+  constructor: (options) -> 
     ctx = count:0, uid:Math.random().toString().substring(2, 10)
     options.methods = options.methods or []
 
     ( (method) => @[method] = -> options.channel.send method:method, args:[].slice.call(arguments), id:"#{ctx.uid}-#{++ctx.count}"
-    ) method for method in options.methods
+    ) method for method in options.methods      
 
-Channel = class Channel
+
+class Channel
   @channels:[]
   constructor: (req, resp, next) ->
     @socket = resp

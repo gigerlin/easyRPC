@@ -1,13 +1,9 @@
 
 Remote = require('avs-easyrpc').sseRemote
 
-exports.Customer = class Customer
+exports.Customer = class Customer extends Remote
 
-  test: -> 'customer'
+  constructor: -> super ['test'] 
 
-  __sse: (@channel) -> # the __sse method is required to get the SSE channel 
-    @remote = new Remote channel:@channel, methods:['test'] # client exposes the echo method
-    @remote.test 'coucou'
-    'OK'
+  _remoteReady: (remote) -> remote.test 'hi there'
 
-    

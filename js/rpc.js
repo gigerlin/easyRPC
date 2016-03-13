@@ -6,7 +6,7 @@
  */
 
 (function() {
-  var Channel, Promise, Remote, Rpc, classServer, expressRpc, log, parser, sessionTimeOut, sse, tag;
+  var Channel, Promise, Remote, Rpc, SSE, classServer, expressRpc, log, parser, sessionTimeOut, sse, tag;
 
   parser = require('body-parser');
 
@@ -36,7 +36,7 @@
             msg.args = [Channel.channels[msg.args[0]]];
           }
           rep = (ref = this.local)[msg.method].apply(ref, msg.args);
-          if (typeof rep["catch"] === 'function') {
+          if (rep && typeof rep["catch"] === 'function') {
             rep.then((function(_this) {
               return function(rep) {
                 return _this._return(msg, {
@@ -152,12 +152,28 @@
   })();
 
   exports.Remote = Remote = (function() {
-    function Remote(options) {
+    function Remote(methods) {
+      this['remote methods'] = methods;
+    }
+
+    Remote.prototype.__sse = function(channel) {
+      return this._remoteReady(new SSE({
+        channel: channel,
+        methods: this['remote methods']
+      }));
+    };
+
+    Remote.prototype._remoteReady = function() {
+      return 'SSE remoteReady not defined';
+    };
+
+    return Remote;
+
+  })();
+
+  SSE = (function() {
+    function SSE(options) {
       var ctx, fn, i, len, method, ref;
-      if (!options.channel) {
-        log('SSE error: no channel for remote object create');
-        return;
-      }
       ctx = {
         count: 0,
         uid: Math.random().toString().substring(2, 10)
@@ -181,11 +197,11 @@
       }
     }
 
-    return Remote;
+    return SSE;
 
   })();
 
-  Channel = Channel = (function() {
+  Channel = (function() {
     Channel.channels = [];
 
     function Channel(req, resp, next) {
