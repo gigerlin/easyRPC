@@ -72,7 +72,7 @@ module.exports = Employee;
 ```
 All methods of class Employee will be **automatically** exposed but the constructor and the methods beginning with '_' (those are seen as private methods).
 
-A reserved method **__sse** is used for SSE support (cf. chat example for detail).
+A reserved method **_remoteReady** is used for SSE support (cf. chat example for detail).
 
 If a method is asynchronous, meaning it does not return a result synchronously, a Promise mut be returned. For example:
 
@@ -123,28 +123,24 @@ expose(local, new Remote({class:'rcn'}))
 ##### new Server
 ```javascript
 var expressRpc = require('avs-easyrpc').Server;
-new expressRpc(exp, { Employee: require('./employee') }, { timeOut: 10 * 60 * 1000, limit: '512kb' });
+new expressRpc(exp, classes, options);
 ```
 + *exp* is the express instance (cf. example above)
-+ *{ classes }* is the object containing all the classes the server can instantiate. Each object attribute is the name of the class that will be used on the client side to request an object creation.
-+ *{ options }* are timeOut, i.e. the session duration (default is 30 minutes), and limit, the maximum message capacity (for each method invocation)
++ *classes* is the object containing all the classes the server can instantiate. Each object attribute is the name of the class that will be used on the client side to request an object creation.
++ *options* are timeOut, i.e. the session duration (default is 30 minutes), and limit, the maximum message capacity (for each method invocation)
 
-##### __sse
-A class may define a '__sse' method if the server needs to send data to the client via SSE.
+##### _remoteReady (optional / when SSE is used)
+A class may define a '_remoteReady' method if the server needs to send data to the client via SSE.
 ```javascript
-function Employee() {};
-Employee.prototype.__sse = function(channel) {
-  this.channel = channel;
-  this.remote = new Remote({
-    channel: this.channel,
-    methods: ['echo']
-  });
-  return 'OK';
-};
-```
-The method '__sse' takes as input the SSE channel that the client is using. This channel allows the creation of a remote object on the client side (cf. the local object above) and the definition of the methods that can be invoked on the client object by the server. See the test files provided for a complete example. 
+class Customer extends require('avs-easyrpc').sseRemote
 
-Unlike the remote objects on the client side, the methods of the remote objects created on the server side (which invoke method on the client) do not return values. If values have to be returned, the standard remote objects on the client are used.
+  constructor: -> super ['test'] 
+  
+  _remoteReady: (remote) -> remote.test 'hi there'
+```
+The method '_remoteReady' takes as input the remote object connected via SSE. The methods supported by this object are defined when constructing the class object. See the test files provided for a complete example. 
+
+Unlike the remote objects on the client side, the methods of the remote objects created on the server side (which invoke method on the clients) do not return values. If values have to be returned, the standard remote objects on the client are used.
 
 ### Debug
 Outgoing and incoming messages are logged to the console on both sides.
@@ -202,15 +198,15 @@ On the **server side** (file employee.coffee):
 chat = [] # the list of all members
 count = 0 # automatic naming of members
 
-module.exports = class Employee
+module.exports = class Employee extends require('avs-easyrpc').sseRemote
+
+  constructor: -> super ['echo'] # the methods of the remote object
+
+  _remoteReady: (@remote) ->
 
   speak: (msg) ->
     delete chat[member] for member of chat when chat[member].channel.closed # remove members who left
     unless @alias then chat[@alias = "joe-#{++count}"] = @  # join the chat
     chat[member].remote.echo @alias, msg for member of chat # broadcast to every member
-    'OK'
-    
-  __sse: (@channel) -> # the __sse method is required to get the SSE channel 
-    @remote = new Remote channel:@channel, methods:['echo'] # client exposes the echo method
     'OK'
 ```  
