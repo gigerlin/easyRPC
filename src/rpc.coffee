@@ -76,20 +76,17 @@ exports.expressRpc = class expressRpc
 #
     app.get "/#{tag}", (req, res, next) -> new Channel req, res, next
 
-exports.Remote = class Remote
-  constructor: (methods) -> @['remote methods'] = methods
-
-  __sse: (channel) -> @_remoteReady new SSE channel:channel, methods:@['remote methods']
+exports.SSE = class SSE
+  __sse: (channel) -> @_remoteReady new Remote channel
   _remoteReady: -> 'SSE remoteReady not defined'
 
-class SSE
-  constructor: (options) -> 
+class Remote
+  constructor: (@__sse) -> 
+  setMethods: (methods) ->
     ctx = count:0, uid:Math.random().toString().substring(2, 10)
-    options.methods = options.methods or []
 
-    ( (method) => @[method] = -> options.channel.send method:method, args:[].slice.call(arguments), id:"#{ctx.uid}-#{++ctx.count}"
-    ) method for method in options.methods      
-
+    ( (method) => @[method] = => @__sse.send method:method, args:[].slice.call(arguments), id:"#{ctx.uid}-#{++ctx.count}"
+    ) method for method in methods or []
 
 class Channel
   @channels:[]

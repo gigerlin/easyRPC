@@ -1,9 +1,7 @@
 
-Remote = require('avs-easyrpc').sseRemote
+exports.Customer = class Customer extends require('avs-easyrpc').SSE
 
-exports.Customer = class Customer extends Remote
-
-  constructor: -> super ['test'] 
-
-  _remoteReady: (remote) -> remote.test 'hi there'
+  _remoteReady: (remote) -> 
+    remote.setMethods ['test']
+    remote.test 'hi there'
 

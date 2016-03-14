@@ -5,21 +5,21 @@
 if typeof Promise is 'undefined' then Promise = require('avs-easyrpc').Promise
 
 log = require('avs-easyrpc').log
-Remote = require('avs-easyrpc').sseRemote
+SSE = require('avs-easyrpc').SSE
 
 chat = [] # the list of all members
 count = 0 # automatic naming of members
 
-exports.Employee = class Employee extends Remote # extends remote will create a @remote object on SEE channel open
+# !!! __sse is a reserved word
 
-  constructor: -> super ['echo'] # the methods of the remote object
+exports.Employee = class Employee extends SSE # extends remote will create a @remote object on SEE channel open
 
-  _remoteReady: (@remote) ->
+  _remoteReady: (@remote) -> @remote.setMethods ['echo']; 'OK'
 
   speak: (msg) ->
-    delete chat[member] for member of chat when chat[member].channel.closed # remove members who left
-    unless @alias then chat[@alias = "joe-#{++count}"] = @  # join the chat
-    chat[member].remote.echo @alias, msg for member of chat # broadcast to every member
+    delete chat[member] for member of chat when chat[member].__sse.closed # remove members who left
+    unless @alias then chat[@alias = "joe-#{++count}"] = @remote  # join the chat
+    chat[member].echo @alias, msg for member of chat # broadcast to every member
     'OK'
 
   getProfile: (name) -> 

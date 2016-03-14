@@ -151,53 +151,52 @@
 
   })();
 
-  exports.Remote = Remote = (function() {
-    function Remote(methods) {
-      this['remote methods'] = methods;
-    }
+  exports.SSE = SSE = (function() {
+    function SSE() {}
 
-    Remote.prototype.__sse = function(channel) {
-      return this._remoteReady(new SSE({
-        channel: channel,
-        methods: this['remote methods']
-      }));
+    SSE.prototype.__sse = function(channel) {
+      return this._remoteReady(new Remote(channel));
     };
 
-    Remote.prototype._remoteReady = function() {
+    SSE.prototype._remoteReady = function() {
       return 'SSE remoteReady not defined';
     };
 
-    return Remote;
+    return SSE;
 
   })();
 
-  SSE = (function() {
-    function SSE(options) {
-      var ctx, fn, i, len, method, ref;
+  Remote = (function() {
+    function Remote(__sse) {
+      this.__sse = __sse;
+    }
+
+    Remote.prototype.setMethods = function(methods) {
+      var ctx, i, len, method, ref, results;
       ctx = {
         count: 0,
         uid: Math.random().toString().substring(2, 10)
       };
-      options.methods = options.methods || [];
-      ref = options.methods;
-      fn = (function(_this) {
-        return function(method) {
-          return _this[method] = function() {
-            return options.channel.send({
-              method: method,
-              args: [].slice.call(arguments),
-              id: ctx.uid + "-" + (++ctx.count)
-            });
-          };
-        };
-      })(this);
+      ref = methods || [];
+      results = [];
       for (i = 0, len = ref.length; i < len; i++) {
         method = ref[i];
-        fn(method);
+        results.push(((function(_this) {
+          return function(method) {
+            return _this[method] = function() {
+              return _this.__sse.send({
+                method: method,
+                args: [].slice.call(arguments),
+                id: ctx.uid + "-" + (++ctx.count)
+              });
+            };
+          };
+        })(this))(method));
       }
-    }
+      return results;
+    };
 
-    return SSE;
+    return Remote;
 
   })();
 

@@ -93,7 +93,11 @@
         log('SSE in', e.data);
         msg = JSON.parse(e.data);
         if (msg.method) {
-          return local[msg.method].apply(local, msg.args);
+          if (local[msg.method]) {
+            return local[msg.method].apply(local, msg.args);
+          } else {
+            return log('SSE error: no method', msg.method, 'for local object', local);
+          }
         } else if (msg.uid) {
           remote[sse](msg.uid);
           return resolve(source);
