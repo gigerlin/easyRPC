@@ -132,15 +132,18 @@ new expressRpc(exp, classes, options);
 ##### _remoteReady (optional / when SSE is used)
 A class may define a '_remoteReady' method if the server needs to send data to the client via SSE.
 ```javascript
-class Customer extends require('avs-easyrpc').sseRemote
+class Customer extends require('avs-easyrpc').SSE
 
-  constructor: -> super ['test'] 
-  
-  _remoteReady: (remote) -> remote.test 'hi there'
+  _remoteReady: (remote) -> 
+    remote.setMethods ['test']
+    remote.test 'hi there'
 ```
-The method '_remoteReady' takes as input the remote object connected via SSE. The methods supported by this object are defined when constructing the class object. See the test files provided for a complete example. 
+The method '_remoteReady' is called when a SSE channel is open by a client. It gets as input the remote object connected via SSE. The methods supported by this object are defined with `setMethods`. See the test files provided for a complete example. 
+Unlike the remote objects on the client side, the methods of the SSE remote objects created on the server side (which invoke method on the clients) do not return values. If values have to be returned, the standard remote objects on the client are used.
 
-Unlike the remote objects on the client side, the methods of the remote objects created on the server side (which invoke method on the clients) do not return values. If values have to be returned, the standard remote objects on the client are used.
+The SSE remote objects have a `__sse` attribute that contains the SSE channel. It can be used to test the status of the channel. For example, remote.__see.closed if true when channel is closed.
+
+**N.B.:** both the class which extends SSE and the remote objects use a reserve attribute `__sse` 
 
 ### Debug
 Outgoing and incoming messages are logged to the console on both sides.
@@ -198,15 +201,13 @@ On the **server side** (file employee.coffee):
 chat = [] # the list of all members
 count = 0 # automatic naming of members
 
-module.exports = class Employee extends require('avs-easyrpc').sseRemote
+exports.Employee = class Employee extends SSE # extends remote will create a remote object on SEE channel open
 
-  constructor: -> super ['echo'] # the methods of the remote object
-
-  _remoteReady: (@remote) ->
+  _remoteReady: (@remote) -> @remote.setMethods ['echo']; 'OK'
 
   speak: (msg) ->
-    delete chat[member] for member of chat when chat[member].channel.closed # remove members who left
-    unless @alias then chat[@alias = "joe-#{++count}"] = @  # join the chat
-    chat[member].remote.echo @alias, msg for member of chat # broadcast to every member
+    delete chat[member] for member of chat when chat[member].__sse.closed # remove members who left
+    unless @alias then chat[@alias = "joe-#{++count}"] = @remote  # join the chat
+    chat[member].echo @alias, msg for member of chat # broadcast to every member
     'OK'
 ```  
