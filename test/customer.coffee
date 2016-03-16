@@ -1,5 +1,5 @@
 
-exports.Customer = class Customer extends require('avs-easyrpc').SSE
+exports.Customer = class Customer
 
   _remoteReady: (remote) -> 
     remote.setMethods ['test']

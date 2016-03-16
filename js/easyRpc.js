@@ -17,7 +17,7 @@
 
   tag = 'rpc';
 
-  sse = '__sse';
+  sse = '_remoteReady';
 
   exports.Remote = Remote = (function() {
     function Remote(options) {

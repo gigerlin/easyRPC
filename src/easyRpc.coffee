@@ -9,7 +9,7 @@ if typeof window is 'object' # for Safari & IE
 
 log = require './log'
 tag = 'rpc'
-sse = '__sse'
+sse = '_remoteReady'
 
 #
 # Client Side

@@ -13,6 +13,6 @@ expressRpc = require('avs-easyrpc').Server
 port = 4145
 http.createServer store
 .listen port, -> 
-  console.log "Server started at #{port}", new Date()
+  console.log "Server started at #{port}", new Date(), '\n'
   new expressRpc store, { Employee:require('./employee'), Customer:require('./customer') }, timeOut:10 * 60 * 1000
 

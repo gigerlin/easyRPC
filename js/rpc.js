@@ -6,7 +6,7 @@
  */
 
 (function() {
-  var Channel, Promise, Remote, Rpc, SSE, classServer, expressRpc, log, parser, sessionTimeOut, sse, tag;
+  var Channel, Promise, Remote, Rpc, classServer, expressRpc, log, parser, sessionTimeOut, sse, tag;
 
   parser = require('body-parser');
 
@@ -18,7 +18,7 @@
 
   tag = 'rpc';
 
-  sse = '__sse';
+  sse = '_remoteReady';
 
   sessionTimeOut = 30 * 60 * 1000;
 
@@ -30,13 +30,21 @@
     Rpc.prototype.process = function(msg, res) {
       var e, error, ref, rep;
       log(msg.id + " in", msg);
-      if (this.local[msg.method]) {
+      if (msg.method === sse) {
+        if (typeof this.local[sse] === 'function') {
+          this.local[sse](new Remote(Channel.channels[msg.args[0]]));
+          return this._return(msg, {
+            rep: 'sse OK'
+          }, res);
+        } else {
+          return this._return(msg, {
+            err: "error: no _remoteReady method for channel " + msg.args[0]
+          }, res);
+        }
+      } else if (this.local[msg.method]) {
         try {
-          if (msg.method === sse) {
-            msg.args = [Channel.channels[msg.args[0]]];
-          }
           rep = (ref = this.local)[msg.method].apply(ref, msg.args);
-          if (rep && typeof rep["catch"] === 'function') {
+          if (typeof rep["catch"] === 'function') {
             rep.then((function(_this) {
               return function(rep) {
                 return _this._return(msg, {
@@ -151,24 +159,9 @@
 
   })();
 
-  exports.SSE = SSE = (function() {
-    function SSE() {}
-
-    SSE.prototype.__sse = function(channel) {
-      return this._remoteReady(new Remote(channel));
-    };
-
-    SSE.prototype._remoteReady = function() {
-      return 'SSE remoteReady not defined';
-    };
-
-    return SSE;
-
-  })();
-
   Remote = (function() {
-    function Remote(__sse) {
-      this.__sse = __sse;
+    function Remote(_sseChannel) {
+      this._sseChannel = _sseChannel;
     }
 
     Remote.prototype.setMethods = function(methods) {
@@ -184,7 +177,7 @@
         results.push(((function(_this) {
           return function(method) {
             return _this[method] = function() {
-              return _this.__sse.send({
+              return _this._sseChannel.send({
                 method: method,
                 args: [].slice.call(arguments),
                 id: ctx.uid + "-" + (++ctx.count)

@@ -12,7 +12,7 @@ if typeof Promise is 'undefined' then Promise = require './promise'
 #
 log = require './log'
 tag = 'rpc'
-sse = '__sse'
+sse = '_remoteReady'
 sessionTimeOut = 30 * 60 * 1000 # 30 minutes
 
 class Rpc # inspired from minimum-rpc
@@ -20,11 +20,15 @@ class Rpc # inspired from minimum-rpc
 
   process: (msg, res) ->
     log "#{msg.id} in", msg
-    if @local[msg.method]
+    if msg.method is sse # SSE Support
+      if typeof @local[sse] is 'function'
+        @local[sse] new Remote Channel.channels[msg.args[0]]
+        @_return msg, rep:'sse OK', res
+      else @_return msg, err:"error: no _remoteReady method for channel #{msg.args[0]}", res
+    else if @local[msg.method]
       try
-        msg.args = [Channel.channels[msg.args[0]]] if msg.method is sse # SSE Support
         rep = @local[msg.method] msg.args...
-        if rep and typeof rep.catch is 'function' # rep instanceof Promise
+        if typeof rep.catch is 'function' # rep instanceof Promise
           rep.then (rep) =>  @_return msg, rep:rep, res
           rep.catch (err) => @_return msg, err:err, res
         else @_return msg, rep:rep, res
@@ -76,16 +80,12 @@ exports.expressRpc = class expressRpc
 #
     app.get "/#{tag}", (req, res, next) -> new Channel req, res, next
 
-exports.SSE = class SSE
-  __sse: (channel) -> @_remoteReady new Remote channel
-  _remoteReady: -> 'SSE remoteReady not defined'
-
 class Remote
-  constructor: (@__sse) -> 
+  constructor: (@_sseChannel) -> 
   setMethods: (methods) ->
     ctx = count:0, uid:Math.random().toString().substring(2, 10)
 
-    ( (method) => @[method] = => @__sse.send method:method, args:[].slice.call(arguments), id:"#{ctx.uid}-#{++ctx.count}"
+    ( (method) => @[method] = => @_sseChannel.send method:method, args:[].slice.call(arguments), id:"#{ctx.uid}-#{++ctx.count}"
     ) method for method in methods or []
 
 class Channel

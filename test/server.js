@@ -21,7 +21,7 @@
   port = 4145;
 
   http.createServer(store).listen(port, function() {
-    console.log("Server started at " + port, new Date());
+    console.log("Server started at " + port, new Date(), '\n');
     return new expressRpc(store, {
       Employee: require('./employee'),
       Customer: require('./customer')
