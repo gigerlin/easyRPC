@@ -199,12 +199,12 @@ On the **server side** (file employee.coffee):
 chat = [] # the list of all members
 count = 0 # automatic naming of members
 
-exports.Employee = class Employee extends SSE # extends remote will create a remote object on SEE channel open
+exports.Employee = class Employee
 
-  _remoteReady: (@remote) -> @remote.setMethods ['echo']; 'OK'
+  _remoteReady: (@remote) -> @remote.setMethods ['echo']; 'OK' # called when SSE channel opens
 
   speak: (msg) ->
-    delete chat[member] for member of chat when chat[member].__sse.closed # remove members who left
+    delete chat[member] for member of chat when chat[member]._sseChannel.closed # remove members who left
     unless @alias then chat[@alias = "joe-#{++count}"] = @remote  # join the chat
     chat[member].echo @alias, msg for member of chat # broadcast to every member
     'OK'
