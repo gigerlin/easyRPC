@@ -5,8 +5,6 @@
 
 parser = require('body-parser')
 
-if typeof Promise is 'undefined' then Promise = require './promise'
-
 #
 # Server Side
 #
