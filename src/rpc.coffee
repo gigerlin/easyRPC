@@ -63,7 +63,7 @@ class classServer # for Http POST
 #
 # Class expressRpc: dispatch incoming HTTP requests / class
 #
-exports.expressRpc = class expressRpc
+module.exports = class expressRpc
   constructor: (app, classes, options = {}) ->
     process.on 'uncaughtException', (err) -> log 'Caught exception: ', err.stack
     app.use parser.json limit:options.limit or '512kb'

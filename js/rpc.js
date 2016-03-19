@@ -120,7 +120,7 @@
 
   })();
 
-  exports.expressRpc = expressRpc = (function() {
+  module.exports = expressRpc = (function() {
     function expressRpc(app, classes, options) {
       var Class, fn, server;
       if (options == null) {

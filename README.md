@@ -199,7 +199,7 @@ On the **server side** (file employee.coffee):
 chat = [] # the list of all members
 count = 0 # automatic naming of members
 
-exports.Employee = class Employee
+module.exports = class Employee
 
   _remoteReady: (@remote) -> @remote.setMethods ['echo']; 'OK' # called when SSE channel opens
 
