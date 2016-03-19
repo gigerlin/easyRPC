@@ -10,7 +10,7 @@
 
   count = 0;
 
-  exports.Employee = Employee = (function() {
+  module.exports = Employee = (function() {
     function Employee() {}
 
     Employee.prototype._remoteReady = function(remote) {

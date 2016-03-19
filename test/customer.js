@@ -2,7 +2,7 @@
 (function() {
   var Customer;
 
-  exports.Customer = Customer = (function() {
+  module.exports = Customer = (function() {
     function Customer() {}
 
     Customer.prototype._remoteReady = function(remote) {

@@ -9,7 +9,7 @@ count = 0 # automatic naming of members
 
 # !!! __sse is a reserved word
 
-exports.Employee = class Employee
+module.exports = class Employee
 
   _remoteReady: (@remote) -> @remote.setMethods ['echo']; 'OK' # called when SSE channel opens
 

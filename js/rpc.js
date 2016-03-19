@@ -6,13 +6,9 @@
  */
 
 (function() {
-  var Channel, Promise, Remote, Rpc, classServer, expressRpc, log, parser, sessionTimeOut, sse, tag;
+  var Channel, Remote, Rpc, classServer, expressRpc, log, parser, sessionTimeOut, sse, tag;
 
   parser = require('body-parser');
-
-  if (typeof Promise === 'undefined') {
-    Promise = require('./promise');
-  }
 
   log = require('./log');
 
@@ -92,7 +88,7 @@
       this.timeOut = timeOut != null ? timeOut : sessionTimeOut;
       for (Class in classes) {
         this["def " + Class] = {
-          Class: classes[Class][Class],
+          Class: classes[Class],
           sessions: []
         };
       }
