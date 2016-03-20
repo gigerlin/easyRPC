@@ -76,12 +76,17 @@
   };
 
   exports.expose = function(local, remote, url) {
+    var obj;
+    local = local || {};
+    remote = remote || (
+      obj = {},
+      obj["" + sse] = function() {
+        return log("missing remote object in expose");
+      },
+      obj
+    );
     return new Promise(function(resolve, reject) {
-      var err, source;
-      if (!remote) {
-        log(err = 'SSE error: no remote object to create channel');
-        reject(err);
-      }
+      var source;
       source = new EventSource(url ? url + "/" + tag : tag);
       return source.addEventListener(tag, function(e) {
         var msg;

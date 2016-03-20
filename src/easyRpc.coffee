@@ -32,22 +32,21 @@ send = (request, msg) ->
 #
 # SSE Support
 #
-exports.expose = (local, remote, url) -> new Promise (resolve, reject) ->
-  unless remote
-    log err = 'SSE error: no remote object to create channel' 
-    reject err
-  
-  source = new EventSource if url then "#{url}/#{tag}" else tag
-  source.addEventListener tag, (e) -> 
-    log 'SSE in', e.data 
-    msg = JSON.parse e.data
-    if msg.method
-      if local[msg.method] then local[msg.method] msg.args...
-      else log 'SSE error: no method', msg.method, 'for local object', local
-    else if msg.uid # tell the remote object on the server which channel to use
-      remote[sse] msg.uid
-      resolve source # return source so that source.stop() can be called
-  , false
+exports.expose = (local, remote, url) -> 
+  local = local or {}
+  remote = remote or { "#{sse}": -> log "missing remote object in expose"}
+  new Promise (resolve, reject) ->
+    source = new EventSource if url then "#{url}/#{tag}" else tag
+    source.addEventListener tag, (e) -> 
+      log 'SSE in', e.data 
+      msg = JSON.parse e.data
+      if msg.method
+        if local[msg.method] then local[msg.method] msg.args...
+        else log 'SSE error: no method', msg.method, 'for local object', local
+      else if msg.uid # tell the remote object on the server which channel to use
+        remote[sse] msg.uid
+        resolve source # return source so that source.stop() can be called
+    , false
 
 #
 # Required modules
