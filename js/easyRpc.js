@@ -6,7 +6,7 @@
  */
 
 (function() {
-  var EventSource, Promise, Remote, Response, fetch, log, rp, send, sse, tag;
+  var EventSource, Promise, Remote, Response, fetch, log, send, sse, tag;
 
   log = require('./log');
 
@@ -113,17 +113,28 @@
   } else if (typeof global === 'object') {
     Promise = global.Promise;
     EventSource = require('EventSource');
-    rp = require('request');
     fetch = function(uri, options) {
       return new Promise(function(resolve, reject) {
-        options.uri = uri;
-        return rp(options, function(error, response, body) {
-          if (error) {
-            return reject(error);
-          } else {
+        var req, tmp;
+        uri = uri.replace(/https?:\/\//, '');
+        tmp = uri.split('/');
+        options.path = "/" + tmp[1];
+        tmp = tmp[0].split(':');
+        options.hostname = tmp[0];
+        if (tmp[1]) {
+          options.port = tmp[1];
+        }
+        req = http.request(options, function(res) {
+          res.setEncoding('utf8');
+          return res.on('data', function(body) {
             return resolve(new Response(body));
-          }
+          });
         });
+        req.on('error', function(e) {
+          return reject(e.message);
+        });
+        req.write(options.body);
+        return req.end();
       });
     };
     Response = (function() {

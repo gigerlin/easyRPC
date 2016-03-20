@@ -34,7 +34,7 @@ send = (request, msg) ->
 #
 exports.expose = (local, remote, url) -> 
   local = local or {}
-  remote = remote or { "#{sse}": -> log "missing remote object in expose"}
+  remote = remote or "#{sse}": -> log "missing remote object in expose"
   new Promise (resolve, reject) ->
     source = new EventSource if url then "#{url}/#{tag}" else tag
     source.addEventListener tag, (e) -> 
@@ -59,10 +59,22 @@ if typeof window is 'object' # for Safari & IE
 else if typeof global is 'object' # Nodejs
   Promise = global.Promise
   EventSource = require 'EventSource'
-  rp = require 'request'
   fetch = (uri, options) -> new Promise (resolve, reject) ->
-    options.uri = uri
-    rp options, (error, response, body) -> if error then reject error else resolve new Response body
+    uri = uri.replace /https?:\/\//, ''
+    tmp = uri.split '/'
+    options.path = "/#{tmp[1]}"
+    tmp = tmp[0].split ':'
+    options.hostname = tmp[0]
+    options.port = tmp[1] if tmp[1]
+    req = http.request options, (res) ->
+      res.setEncoding('utf8')
+      res.on 'data', (body) -> resolve new Response body
+    req.on 'error', (e) -> reject e.message
+    req.write(options.body)
+    req.end()
+
   class Response
     constructor: (@data) ->
     json: -> JSON.parse @data
+
+
