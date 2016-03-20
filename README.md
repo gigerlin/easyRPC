@@ -177,7 +177,7 @@ Errors are reported from the server to the browser. For example, publish is not 
 ### Test - Chat Application
 A minimalist sample is provided for test purpose. It includes all necessary files, in coffeescript and javascript format. The html file uses a browserified javascript file (test.min.js), that can be obtained via the command line:
 
-`browserify -i ../js/rpc.js -i ../js/fetch.js -i ../js/promise.js -u request -u EventSource -s LS test.js > test.min.js`
+`browserify -i ../js/rpc.js -i ../js/fetch.js -i ../js/promise.js -u EventSource -s LS test.js > test.min.js`
 
 The sample is a chat application which demoes calls from client to server (speak) and from server to clients (echo). Here is the coffeescript **client side** of the chat application (file test.coffee):
 
