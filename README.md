@@ -7,7 +7,7 @@ Communication from the server to the clients is also supported via the native HT
 
 Since it is based on pure HTTP, it should pass through main corporate firewalls.
 
-From version 1.3.0, easyRPC can be used also in Node.
+From version 1.3.0, easyRPC can be used also in Node. When the client runs in Node, the server URL must be used when creating remote ojbects and event sources.
 
 ### Installation
 `npm install avs-easyrpc`
