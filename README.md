@@ -14,7 +14,7 @@ From version 1.3.0, easyRPC can be used also in Node. When the client runs in No
 
 The server needs the modules 'express' and 'body-parser': `npm install express body-parser`
 
-The node client needs 'request' and 'EventSource' when it runs in Node: `npm install request EventSource`
+The node client needs 'request' and 'eventsource' when it runs in Node: `npm install request eventsource`
 
 ### Browser Side
 Remote objects are defined by their class name and the methods that need to be invoked. For example:
