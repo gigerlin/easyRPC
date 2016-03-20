@@ -1,5 +1,5 @@
 # easyRPC
-RPC made easy for browser
+RPC made easy for browser and Node
 
 This tiny library allows to easily invoke methods on remote objects from a web browser via an HTTP request. It uses the browser native fetch function (cf. [Fetch API](https://developer.mozilla.org/en/docs/Web/API/Fetch_API "Fetch API") for browser compatibility). Polyfills are provided for browser which do not support fetch or Promise.
 
@@ -7,10 +7,14 @@ Communication from the server to the clients is also supported via the native HT
 
 Since it is based on pure HTTP, it should pass through main corporate firewalls.
 
+From version 1.3.0, easyRPC can be used also in Node.
+
 ### Installation
 `npm install avs-easyrpc`
 
-The server needs the modules express and body-parser: `npm install express body-parser`
+The server needs the modules 'express' and 'body-parser': `npm install express body-parser`
+
+The node client needs 'request' and 'EventSource' when it runs in Node: `npm install request EventSource`
 
 ### Browser Side
 Remote objects are defined by their class name and the methods that need to be invoked. For example:
@@ -173,7 +177,7 @@ Errors are reported from the server to the browser. For example, publish is not 
 ### Test - Chat Application
 A minimalist sample is provided for test purpose. It includes all necessary files, in coffeescript and javascript format. The html file uses a browserified javascript file (test.min.js), that can be obtained via the command line:
 
-`browserify -i ../js/rpc.js -i ../js/fetch.js -i ../js/promise.js -s LS test.js > test.min.js`
+`browserify -i ../js/rpc.js -i ../js/fetch.js -i ../js/promise.js -u request -u EventSource -s LS test.js > test.min.js`
 
 The sample is a chat application which demoes calls from client to server (speak) and from server to clients (echo). Here is the coffeescript **client side** of the chat application (file test.coffee):
 
