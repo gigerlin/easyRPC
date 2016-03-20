@@ -6,12 +6,7 @@
  */
 
 (function() {
-  var Promise, Remote, fetch, log, send, sse, tag;
-
-  if (typeof window === 'object') {
-    fetch = window.fetch || require('./fetch');
-    Promise = window.Promise || require('./promise');
-  }
+  var EventSource, Promise, Remote, Response, fetch, log, rp, send, sse, tag;
 
   log = require('./log');
 
@@ -80,14 +75,14 @@
     });
   };
 
-  exports.expose = function(local, remote) {
+  exports.expose = function(local, remote, url) {
     return new Promise(function(resolve, reject) {
       var err, source;
       if (!remote) {
         log(err = 'SSE error: no remote object to create channel');
         reject(err);
       }
-      source = new EventSource(tag);
+      source = new EventSource(url ? url + "/" + tag : tag);
       return source.addEventListener(tag, function(e) {
         var msg;
         log('SSE in', e.data);
@@ -105,5 +100,39 @@
       }, false);
     });
   };
+
+  if (typeof window === 'object') {
+    fetch = window.fetch || require('./fetch');
+    Promise = window.Promise || require('./promise');
+    EventSource = window.EventSource;
+  } else if (typeof global === 'object') {
+    Promise = global.Promise;
+    EventSource = require('EventSource');
+    rp = require('request');
+    fetch = function(uri, options) {
+      return new Promise(function(resolve, reject) {
+        options.uri = uri;
+        return rp(options, function(error, response, body) {
+          if (error) {
+            return reject(error);
+          } else {
+            return resolve(new Response(body));
+          }
+        });
+      });
+    };
+    Response = (function() {
+      function Response(data) {
+        this.data = data;
+      }
+
+      Response.prototype.json = function() {
+        return JSON.parse(this.data);
+      };
+
+      return Response;
+
+    })();
+  }
 
 }).call(this);

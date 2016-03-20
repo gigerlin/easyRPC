@@ -3,10 +3,6 @@
   Copyright 2016. All rights reserved.
 ###
 
-if typeof window is 'object' # for Safari & IE
-  fetch = window.fetch or require './fetch'
-  Promise = window.Promise or require './promise'
-
 log = require './log'
 tag = 'rpc'
 sse = '_remoteReady'
@@ -26,9 +22,9 @@ exports.Remote = class Remote
 send = (request, msg) ->
   log "#{msg.id} out", msg
   new Promise (resolve, reject) ->
-    fetch request, headers:{'Content-Type':'application/json; charset=utf-8'}, method:'post', body:JSON.stringify msg 
+    fetch request, headers:{'Content-Type':'application/json; charset=utf-8'}, method:'post', body:JSON.stringify msg
     .catch (err) -> log "#{msg.id}: network error #{err}"; reject err
-    .then (response) -> response.json() if response # no response when page reloads
+    .then (response) -> response.json() if response
     .then (rep) -> if rep
       log "#{msg.id} in", rep    
       if rep.err then reject rep.err else resolve rep.rep
@@ -36,12 +32,12 @@ send = (request, msg) ->
 #
 # SSE Support
 #
-exports.expose = (local, remote) -> new Promise (resolve, reject) ->
+exports.expose = (local, remote, url) -> new Promise (resolve, reject) ->
   unless remote
     log err = 'SSE error: no remote object to create channel' 
     reject err
   
-  source = new EventSource tag
+  source = new EventSource if url then "#{url}/#{tag}" else tag
   source.addEventListener tag, (e) -> 
     log 'SSE in', e.data 
     msg = JSON.parse e.data
@@ -52,3 +48,22 @@ exports.expose = (local, remote) -> new Promise (resolve, reject) ->
       remote[sse] msg.uid
       resolve source # return source so that source.stop() can be called
   , false
+
+#
+# Required modules
+#
+if typeof window is 'object' # for Safari & IE
+  fetch = window.fetch or require './fetch'
+  Promise = window.Promise or require './promise'
+  EventSource = window.EventSource
+
+else if typeof global is 'object' # Nodejs
+  Promise = global.Promise
+  EventSource = require 'EventSource'
+  rp = require 'request'
+  fetch = (uri, options) -> new Promise (resolve, reject) ->
+    options.uri = uri
+    rp options, (error, response, body) -> if error then reject error else resolve new Response body
+  class Response
+    constructor: (@data) ->
+    json: -> JSON.parse @data
