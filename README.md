@@ -3,7 +3,7 @@ RPC made easy for browser and Node
 
 This tiny library allows to easily invoke methods on remote objects from a web browser via an HTTP request. It uses the browser native fetch function (cf. [Fetch API](https://developer.mozilla.org/en/docs/Web/API/Fetch_API "Fetch API") for browser compatibility). Polyfills are provided for browser which do not support fetch or Promise.
 
-Communication from the server to the clients is also supported via the native HTML5 EventSource (also known as Server-Side Event, SSE). This allows the server to invoke methods on client objects. The example provided is a very simple chat application.
+Communication from the server to the clients is also supported via the native HTML5 EventSource (also known as Server-Side Event, SSE). This allows the server to invoke methods on client objects. The example provided is a very simple chat application. Polyfill can be found for browser that do not support EventSource. 
 
 Since it is based on pure HTTP, it should pass through main corporate firewalls.
 
@@ -74,10 +74,6 @@ Employee.prototype.getProfile = function(name) {
 };
 module.exports = Employee;
 ```
-All methods of class Employee will be **automatically** exposed but the constructor and the methods beginning with '_' (those are seen as private methods).
-
-A reserved method **_remoteReady** is used for SSE support (cf. chat example for detail).
-
 If a method is asynchronous, meaning it does not return a result synchronously, a Promise mut be returned. For example:
 
 ```javascript
@@ -90,6 +86,9 @@ Employee.prototype.getProfile = function(name) {
   });
 };
 ```
+
+A reserved method **_remoteReady** is used for SSE support (cf. chat example for detail).
+
 **N.B.:** the rpc server can serve as many classes as required. For example:
 
 ```javascript
@@ -119,8 +118,8 @@ var local = new Local();
 expose(local, new Remote({class:'rcn'}))
 .then(function(source){ ... });
 ```
-+ *local* is the local object that will process the messages sent by the server
-+ expose needs a remote object to send to the server the SSE channel to use (see the Server side for counterpart). No specific method is needed. Remote objects have a reserved '__sse' method which is used to send SSE channel to the server.
++ *local* is the local object that will process the messages sent by the server. The methods of the local object which do not start with '_' are transparently sent to the server so that the server can invoke them.
++ expose needs a remote object to send to the server the SSE channel to use (see the Server side for counterpart). No specific method is needed. Remote objects have a reserved `_remoteReady` method which is used to send SSE channel to the server.
 + expose returns a Promise that resolves when the source is connected to the server. The source is returned so that listening to the server can be stopped by invoking `source.stop()`.
 
 #### Server Side
@@ -142,7 +141,7 @@ Customer.prototype._remoteReady = function(remote) {
   remote.test('hi there');
 };
 ```
-The method '_remoteReady' is called when a SSE channel is open by a client. It gets as input the remote object connected via SSE. The methods supported by this object are defined with `setMethods`. See the test files provided for a complete example. 
+The method `_remoteReady` is called when a SSE channel is open by a client. It gets as input the remote object connected via SSE. The methods supported by this object are sent by the client. See the test files provided for a complete example. 
 Unlike the remote objects on the client side, the methods of the SSE remote objects created on the server side (which invoke method on the clients) do not return values. If values have to be returned, the standard remote objects on the client are used.
 
 The SSE remote object has a `_sseChannel` attribute that contains the SSE channel. It can be used to test the status of the channel. For example, remote._sseChannel.closed if true when channel is closed.
