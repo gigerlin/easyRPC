@@ -1,9 +1,9 @@
 # easyRPC
 RPC made easy for browser and Node
 
-This tiny library allows to easily invoke methods on remote objects from a web browser via an HTTP request. It uses the browser native fetch function (cf. [Fetch API](https://developer.mozilla.org/en/docs/Web/API/Fetch_API "Fetch API") for browser compatibility). Polyfills are provided for browser which do not support fetch or Promise.
+This tiny library allows to easily invoke methods on remote objects from a web browser via an HTTP request. It uses the browser native `fetch` function (cf. [Fetch API](https://developer.mozilla.org/en/docs/Web/API/Fetch_API "Fetch API") for browser compatibility). Polyfills are provided for browser which do not support `fetch` or `Promise`.
 
-Communication from the server to the clients is also supported via the native HTML5 EventSource (also known as Server-Side Event, SSE). This allows the server to invoke methods on client objects. The example provided is a very simple chat application. Polyfill can be found for browser that do not support EventSource. 
+Communication from the server to the clients is also supported via the native HTML5 `EventSource` (also known as Server-Side Event, SSE). This allows the server to invoke methods on client objects. The example provided is a very simple chat application. Polyfill can be found for browser that do not support `EventSource`. 
 
 Since it is based on pure HTTP, it should pass through main corporate firewalls.
 
@@ -11,8 +11,6 @@ From version 1.3.0, easyRPC can be used also in Node. When the client runs in No
 
 ### Installation
 `npm install avs-easyrpc`
-
-The server needs the modules 'express' and 'body-parser': `npm install express body-parser`
 
 The node client needs 'eventsource' when it runs in Node: `npm install eventsource`
 
@@ -43,16 +41,15 @@ remote.getProfile('john').then(function(rep) {
 Each remote object is allocated a unique session ID (see the debug section for details). Several remote objects can be created on the same remote class. They will all get a unique session ID. For example, one can create Bob and Alice as remote employees. Bob and Alice will have their own data and sessions...
 
 ### Server Side
-On the server side, a server is required to instantiate the requested remote objects and process the method invocations. The server is based upon the express web framework.
+On the server side, a server is required to instantiate the requested remote objects and process the method invocations. 
 
 ```javascript
-var express = require('express');
+var express = require('./express');
 var test = express();
-test.use(express.static(__dirname + '/'));
 
 // Load the employee class
 var expressRpc = require('avs-easyrpc').Server;
-new expressRpc(test, { Employee: require('./employee') }, { timeOut: 10 * 60 * 1000, limit: '512kb' });
+expressRpc(test, { Employee: require('./employee') }, { timeOut: 10 * 60 * 1000, limit: '512kb' });
 
 // Listen on port 8080
 var http = require('http');
@@ -92,7 +89,7 @@ A reserved method **_remoteReady** is used for SSE support (cf. chat example for
 **N.B.:** the rpc server can serve as many classes as required. For example:
 
 ```javascript
-new expressRpc(test, { 
+expressRpc(test, { 
   Employee: require('./employee'), 
   Customer: require('./customer') 
 }, { timeOut: 10 * 60 * 1000 });
@@ -123,10 +120,10 @@ expose(local, new Remote({class:'rcn'}))
 + expose returns a Promise that resolves when the source is connected to the server. The source is returned so that listening to the server can be stopped by invoking `source.stop()`.
 
 #### Server Side
-##### new Server
+##### Server
 ```javascript
 var expressRpc = require('avs-easyrpc').Server;
-new expressRpc(exp, classes, options);
+expressRpc(exp, classes, options);
 ```
 + *exp* is the express instance (cf. example above)
 + *classes* is the object containing all the classes the server can instantiate. Each object attribute is the name of the class that will be used on the client side to request an object creation.

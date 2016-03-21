@@ -6,9 +6,7 @@
  */
 
 (function() {
-  var Channel, Remote, Rpc, classServer, expressRpc, log, parser, sessionTimeOut, sse, tag;
-
-  parser = require('body-parser');
+  var Channel, Remote, Rpc, classServer, log, sessionTimeOut, sse, tag;
 
   log = require('./log');
 
@@ -120,40 +118,28 @@
 
   })();
 
-  module.exports = expressRpc = (function() {
-    function expressRpc(app, classes, options) {
-      var Class, fn, server;
-      if (options == null) {
-        options = {};
-      }
-      process.on('uncaughtException', function(err) {
-        return log('Caught exception: ', err.stack);
-      });
-      app.use(parser.json({
-        limit: options.limit || '512kb'
-      }));
-      app.use(function(err, req, res, next) {
-        log(err.stack);
-        return next(err);
-      });
-      server = new classServer(classes, options.timeOut);
-      fn = function(Class) {
-        log("listening on class " + Class);
-        return app.post("/" + Class, function(req, res) {
-          return server.process(Class, req.body, res);
-        });
-      };
-      for (Class in classes) {
-        fn(Class);
-      }
-      app.get("/" + tag, function(req, res, next) {
-        return new Channel(req, res, next);
-      });
+  module.exports = function(app, classes, options) {
+    var Class, fn, server;
+    if (options == null) {
+      options = {};
     }
-
-    return expressRpc;
-
-  })();
+    process.on('uncaughtException', function(err) {
+      return log('Caught exception: ', err.stack);
+    });
+    server = new classServer(classes, options.timeOut);
+    fn = function(Class) {
+      log("listening on class " + Class);
+      return app.post("/" + Class, function(req, res) {
+        return server.process(Class, req.body, res);
+      });
+    };
+    for (Class in classes) {
+      fn(Class);
+    }
+    return app.get("/" + tag, function(req, res, next) {
+      return new Channel(req, res, next);
+    });
+  };
 
   Remote = (function() {
     function Remote(_sseChannel, methods) {
@@ -207,7 +193,9 @@
         uid: this.uid,
         id: 'SSE'
       });
-      next();
+      if (next) {
+        next();
+      }
     }
 
     Channel.prototype.send = function(msg) {

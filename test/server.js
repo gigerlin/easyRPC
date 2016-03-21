@@ -6,15 +6,26 @@
  */
 
 (function() {
-  var express, expressRpc, http, port, store;
+  var express, expressRpc, http, parser, port, store;
 
   http = require('http');
 
   express = require('express');
 
+  parser = require('body-parser');
+
   store = express();
 
   store.use(express["static"](__dirname + '/'));
+
+  store.use(parser.json({
+    limit: '512kb'
+  }));
+
+  store.use(function(err, req, res, next) {
+    log(err.stack);
+    return next(err);
+  });
 
   expressRpc = require('avs-easyrpc').Server;
 
@@ -22,7 +33,7 @@
 
   http.createServer(store).listen(port, function() {
     console.log("Server started at " + port, new Date(), '\n');
-    return new expressRpc(store, {
+    return expressRpc(store, {
       Employee: require('./employee'),
       Customer: require('./customer')
     }, {

@@ -3,8 +3,6 @@
   Copyright 2016. All rights reserved.
 ###
 
-parser = require('body-parser')
-
 #
 # Server Side
 #
@@ -63,20 +61,17 @@ class classServer # for Http POST
 #
 # Class expressRpc: dispatch incoming HTTP requests / class
 #
-module.exports = class expressRpc
-  constructor: (app, classes, options = {}) ->
-    process.on 'uncaughtException', (err) -> log 'Caught exception: ', err.stack
-    app.use parser.json limit:options.limit or '512kb'
-    app.use (err, req, res, next) -> log err.stack; next err
-    server = new classServer classes, options.timeOut
-    ( (Class) -> 
-      log "listening on class #{Class}"
-      app.post "/#{Class}", (req, res) -> server.process Class, req.body, res
-    ) Class for Class of classes
+module.exports = (app, classes, options = {}) ->
+  process.on 'uncaughtException', (err) -> log 'Caught exception: ', err.stack
+  server = new classServer classes, options.timeOut
+  ( (Class) -> 
+    log "listening on class #{Class}"
+    app.post "/#{Class}", (req, res) -> server.process Class, req.body, res
+  ) Class for Class of classes
 #
 # Add SSE Support
 #
-    app.get "/#{tag}", (req, res, next) -> new Channel req, res, next
+  app.get "/#{tag}", (req, res, next) -> new Channel req, res, next
 
 class Remote
   constructor: (@_sseChannel, methods) -> 
@@ -100,7 +95,7 @@ class Channel
       delete Channel.channels[@uid]
       @closed = true
     @send uid:@uid, id:'SSE'
-    next()
+    next() if next
 
   send: (msg) -> 
     log "#{msg.id} out #{@uid}", msg
