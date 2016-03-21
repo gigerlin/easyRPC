@@ -136,10 +136,7 @@ new expressRpc(exp, classes, options);
 A class may define a '_remoteReady' method if the server needs to send data to the client via SSE.
 ```javascript
 function Customer() {};
-Customer.prototype._remoteReady = function(remote) {
-  remote.setMethods(['test']);
-  remote.test('hi there');
-};
+Customer.prototype._remoteReady = function(remote) { remote.test('hi there'); };
 ```
 The method `_remoteReady` is called when a SSE channel is open by a client. It gets as input the remote object connected via SSE. The methods supported by this object are sent by the client. See the test files provided for a complete example. 
 Unlike the remote objects on the client side, the methods of the SSE remote objects created on the server side (which invoke method on the clients) do not return values. If values have to be returned, the standard remote objects on the client are used.
