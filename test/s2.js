@@ -17,8 +17,6 @@
     return expressRpc(store, {
       Employee: require('./employee'),
       Customer: require('./customer')
-    }, {
-      timeOut: 10 * 60 * 1000
     });
   });
 
