@@ -1,6 +1,6 @@
 http = require 'http'
 express = require './express'
-expressRpc = require('avs-easyrpc').Server
+expressRpc = require('avs-easyrpc').server
 
 store = express()
 

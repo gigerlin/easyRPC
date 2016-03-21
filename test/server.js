@@ -27,7 +27,7 @@
     return next(err);
   });
 
-  expressRpc = require('avs-easyrpc').Server;
+  expressRpc = require('avs-easyrpc').server;
 
   port = 4145;
 
