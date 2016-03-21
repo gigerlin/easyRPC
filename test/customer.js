@@ -6,7 +6,6 @@
     function Customer() {}
 
     Customer.prototype._remoteReady = function(remote) {
-      remote.setMethods(['test']);
       return remote.test('hi there');
     };
 

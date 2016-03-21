@@ -34,6 +34,7 @@ send = (request, msg) ->
 #
 exports.expose = (local, remote, url) -> 
   local = local or {}
+  methods = (method for method of local when method.charAt(0) isnt '_')
   remote = remote or "#{sse}": -> log "missing remote object in expose"
   new Promise (resolve, reject) ->
     source = new EventSource if url then "#{url}/#{tag}" else tag
@@ -43,8 +44,8 @@ exports.expose = (local, remote, url) ->
       if msg.method
         if local[msg.method] then local[msg.method] msg.args...
         else log 'SSE error: no method', msg.method, 'for local object', local
-      else if msg.uid # tell the remote object on the server which channel to use
-        remote[sse] msg.uid
+      else if msg.uid # tell the remote object on the server which channel and methods to use
+        remote[sse] msg.uid, methods
         resolve source # return source so that source.stop() can be called
     , false
 

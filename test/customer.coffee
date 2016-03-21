@@ -1,7 +1,6 @@
 
 module.exports = class Customer
 
-  _remoteReady: (remote) -> 
-    remote.setMethods ['test']
-    remote.test 'hi there'
+  _remoteReady: (remote) -> remote.test 'hi there'
+    
 

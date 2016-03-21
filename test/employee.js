@@ -15,7 +15,6 @@
 
     Employee.prototype._remoteReady = function(remote) {
       this.remote = remote;
-      this.remote.setMethods(['echo']);
       return 'OK';
     };
 

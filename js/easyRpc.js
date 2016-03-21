@@ -76,8 +76,18 @@
   };
 
   exports.expose = function(local, remote, url) {
-    var obj;
+    var method, methods, obj;
     local = local || {};
+    methods = (function() {
+      var results;
+      results = [];
+      for (method in local) {
+        if (method.charAt(0) !== '_') {
+          results.push(method);
+        }
+      }
+      return results;
+    })();
     remote = remote || (
       obj = {},
       obj["" + sse] = function() {
@@ -99,7 +109,7 @@
             return log('SSE error: no method', msg.method, 'for local object', local);
           }
         } else if (msg.uid) {
-          remote[sse](msg.uid);
+          remote[sse](msg.uid, methods);
           return resolve(source);
         }
       }, false);

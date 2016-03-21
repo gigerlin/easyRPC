@@ -11,7 +11,7 @@ count = 0 # automatic naming of members
 
 module.exports = class Employee
 
-  _remoteReady: (@remote) -> @remote.setMethods ['echo']; 'OK' # called when SSE channel opens
+  _remoteReady: (@remote) -> 'OK' # called when SSE channel opens 
 
   speak: (msg) ->
     delete chat[member] for member of chat when chat[member]._sseChannel.closed # remove members who left

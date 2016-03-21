@@ -20,7 +20,7 @@ class Rpc # inspired from minimum-rpc
     log "#{msg.id} in", msg
     if msg.method is sse # SSE Support
       if typeof @local[sse] is 'function'
-        @local[sse] new Remote Channel.channels[msg.args[0]]
+        @local[sse] new Remote Channel.channels[msg.args[0]], msg.args[1]
         @_return msg, rep:'sse OK', res
       else @_return msg, err:"error: no _remoteReady method for channel #{msg.args[0]}", res
     else if @local[msg.method]
@@ -79,8 +79,7 @@ module.exports = class expressRpc
     app.get "/#{tag}", (req, res, next) -> new Channel req, res, next
 
 class Remote
-  constructor: (@_sseChannel) -> 
-  setMethods: (methods) ->
+  constructor: (@_sseChannel, methods) -> 
     ctx = count:0, uid:Math.random().toString().substring(2, 10)
 
     ( (method) => @[method] = => @_sseChannel.send method:method, args:[].slice.call(arguments), id:"#{ctx.uid}-#{++ctx.count}"

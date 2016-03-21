@@ -28,7 +28,7 @@
       log(msg.id + " in", msg);
       if (msg.method === sse) {
         if (typeof this.local[sse] === 'function') {
-          this.local[sse](new Remote(Channel.channels[msg.args[0]]));
+          this.local[sse](new Remote(Channel.channels[msg.args[0]], msg.args[1]));
           return this._return(msg, {
             rep: 'sse OK'
           }, res);
@@ -156,34 +156,30 @@
   })();
 
   Remote = (function() {
-    function Remote(_sseChannel) {
+    function Remote(_sseChannel, methods) {
+      var ctx, fn, i, len, method, ref;
       this._sseChannel = _sseChannel;
-    }
-
-    Remote.prototype.setMethods = function(methods) {
-      var ctx, i, len, method, ref, results;
       ctx = {
         count: 0,
         uid: Math.random().toString().substring(2, 10)
       };
       ref = methods || [];
-      results = [];
+      fn = (function(_this) {
+        return function(method) {
+          return _this[method] = function() {
+            return _this._sseChannel.send({
+              method: method,
+              args: [].slice.call(arguments),
+              id: ctx.uid + "-" + (++ctx.count)
+            });
+          };
+        };
+      })(this);
       for (i = 0, len = ref.length; i < len; i++) {
         method = ref[i];
-        results.push(((function(_this) {
-          return function(method) {
-            return _this[method] = function() {
-              return _this._sseChannel.send({
-                method: method,
-                args: [].slice.call(arguments),
-                id: ctx.uid + "-" + (++ctx.count)
-              });
-            };
-          };
-        })(this))(method));
+        fn(method);
       }
-      return results;
-    };
+    }
 
     return Remote;
 
