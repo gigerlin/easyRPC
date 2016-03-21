@@ -5,4 +5,5 @@
 
 src/sse.coffee
 
+node_modules/avs-easyrpc
 node_modules
