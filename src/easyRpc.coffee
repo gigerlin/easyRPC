@@ -59,6 +59,7 @@ if typeof window is 'object' # for Safari & IE
 
 else if typeof global is 'object' # Nodejs
   Promise = global.Promise
+  http = require 'http'
   EventSource = require 'EventSource'
   fetch = (uri, options) -> new Promise (resolve, reject) ->
     uri = uri.replace /https?:\/\//, ''

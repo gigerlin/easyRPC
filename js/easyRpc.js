@@ -6,7 +6,7 @@
  */
 
 (function() {
-  var EventSource, Promise, Remote, Response, fetch, log, send, sse, tag;
+  var EventSource, Promise, Remote, Response, fetch, http, log, send, sse, tag;
 
   log = require('./log');
 
@@ -122,6 +122,7 @@
     EventSource = window.EventSource;
   } else if (typeof global === 'object') {
     Promise = global.Promise;
+    http = require('http');
     EventSource = require('EventSource');
     fetch = function(uri, options) {
       return new Promise(function(resolve, reject) {
