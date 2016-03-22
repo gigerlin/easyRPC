@@ -6,17 +6,15 @@
  */
 
 (function() {
-  var Channel, Remote, Rpc, classServer, log, sessionTimeOut, sse, tag;
+  var Channel, Remote, Rpc, classServer, cnf, log;
 
   log = require('./log');
 
-  tag = 'rpc';
-
-  sse = '_remoteReady';
-
-  sessionTimeOut = 30 * 60 * 1000;
+  cnf = require('./config');
 
   Rpc = (function() {
+    var _return;
+
     function Rpc(local) {
       this.local = local;
     }
@@ -24,14 +22,14 @@
     Rpc.prototype.process = function(msg, res) {
       var e, error, ref, rep;
       log(msg.id + " in", msg);
-      if (msg.method === sse) {
-        if (typeof this.local[sse] === 'function') {
-          this.local[sse](new Remote(Channel.channels[msg.args[0]], msg.args[1]));
-          return this._return(msg, {
+      if (msg.method === cnf.sse) {
+        if (typeof this.local[cnf.sse] === 'function') {
+          this.local[cnf.sse](new Remote(Channel.channels[msg.args[0]], msg.args[1]));
+          return _return(msg, {
             rep: 'sse OK'
           }, res);
         } else {
-          return this._return(msg, {
+          return _return(msg, {
             err: "error: no _remoteReady method for channel " + msg.args[0]
           }, res);
         }
@@ -39,39 +37,35 @@
         try {
           rep = (ref = this.local)[msg.method].apply(ref, msg.args);
           if (typeof rep["catch"] === 'function') {
-            rep.then((function(_this) {
-              return function(rep) {
-                return _this._return(msg, {
-                  rep: rep
-                }, res);
-              };
-            })(this));
-            return rep["catch"]((function(_this) {
-              return function(err) {
-                return _this._return(msg, {
-                  err: err
-                }, res);
-              };
-            })(this));
+            rep.then(function(rep) {
+              return _return(msg, {
+                rep: rep
+              }, res);
+            });
+            return rep["catch"](function(err) {
+              return _return(msg, {
+                err: err
+              }, res);
+            });
           } else {
-            return this._return(msg, {
+            return _return(msg, {
               rep: rep
             }, res);
           }
         } catch (error) {
           e = error;
-          return this._return(msg, {
+          return _return(msg, {
             err: "error in " + msg.method + ": " + e
           }, res);
         }
       } else {
-        return this._return(msg, {
+        return _return(msg, {
           err: "error: method " + msg.method + " is unknown"
         }, res);
       }
     };
 
-    Rpc.prototype._return = function(msg, rep, res) {
+    _return = function(msg, rep, res) {
       log(msg.id + " out", rep);
       return res.send(rep);
     };
@@ -83,7 +77,7 @@
   classServer = (function() {
     function classServer(classes, timeOut) {
       var Class;
-      this.timeOut = timeOut != null ? timeOut : sessionTimeOut;
+      this.timeOut = timeOut != null ? timeOut : cnf.sessionTimeOut;
       for (Class in classes) {
         this["def " + Class] = {
           Class: classes[Class],
@@ -99,18 +93,18 @@
         clearTimeout(rpc.timeOut);
       } else {
         this["def " + Class].sessions[uid] = rpc = new Rpc(new this["def " + Class].Class());
-        this._sessions(Class, 'adding', uid);
+        this._echo(Class, 'adding', uid);
       }
       rpc.timeOut = setTimeout((function(_this) {
         return function() {
           delete _this["def " + Class].sessions[uid];
-          return _this._sessions(Class, 'removing', uid);
+          return _this._echo(Class, 'removing', uid);
         };
       })(this), this.timeOut);
       return rpc.process(msg, res);
     };
 
-    classServer.prototype._sessions = function(Class, operation, uid) {
+    classServer.prototype._echo = function(Class, operation, uid) {
       return log(operation + " " + Class + " session " + uid + " (# sessions: " + (Object.keys(this["def " + Class].sessions).length) + ")");
     };
 
@@ -136,7 +130,7 @@
     for (Class in classes) {
       fn(Class);
     }
-    return app.get("/" + tag, function(req, res, next) {
+    return app.get("/" + cnf.tag, function(req, res, next) {
       return new Channel(req, res, next);
     });
   };
@@ -175,13 +169,13 @@
     Channel.channels = [];
 
     function Channel(req, resp, next) {
-      this.socket = resp;
+      this.resp = resp;
       Channel.channels[this.uid = Number(new Date()).toString()] = this;
-      resp.statusCode = 200;
-      resp.setHeader('Content-Type', 'text/event-stream');
-      resp.setHeader('Cache-Control', 'no-cache');
-      resp.setHeader('Connection', 'keep-alive');
-      resp.setHeader('Access-Control-Allow-Origin', '*');
+      this.resp.statusCode = 200;
+      this.resp.setHeader('Content-Type', 'text/event-stream');
+      this.resp.setHeader('Cache-Control', 'no-cache');
+      this.resp.setHeader('Connection', 'keep-alive');
+      this.resp.setHeader('Access-Control-Allow-Origin', '*');
       req.on('close', (function(_this) {
         return function() {
           log('SSE', _this.uid, 'closed');
@@ -200,7 +194,7 @@
 
     Channel.prototype.send = function(msg) {
       log(msg.id + " out " + this.uid, msg);
-      return this.socket.write("event: " + tag + "\ndata: " + (JSON.stringify(msg)) + "\n\n");
+      return this.resp.write("event: " + cnf.tag + "\ndata: " + (JSON.stringify(msg)) + "\n\n");
     };
 
     return Channel;

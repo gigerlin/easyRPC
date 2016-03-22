@@ -6,13 +6,11 @@
  */
 
 (function() {
-  var fs, routes, tag;
+  var fs, routes;
 
   fs = require('fs');
 
   routes = [];
-
-  tag = '';
 
   module.exports = function() {
     var app;
@@ -26,7 +24,7 @@
         var route;
         if (route = routes[req.url]) {
           req.body = Buffer.concat(body).toString();
-          if (req.url !== tag) {
+          if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/json') > -1) {
             req.body = JSON.parse(req.body);
           }
           res.send = function(msg) {
@@ -45,9 +43,11 @@
       return routes[path] = route;
     };
     app.get = function(path, route) {
-      return routes[tag = path] = route;
+      return routes[path] = route;
     };
-    app.use = function() {};
+    app.use = function(path, route) {
+      return routes[path] = route;
+    };
     return app;
   };
 

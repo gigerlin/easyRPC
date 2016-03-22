@@ -6,15 +6,15 @@
  */
 
 (function() {
-  var EventSource, Promise, Remote, Response, fetch, http, log, send, sse, tag;
+  var EventSource, Promise, Remote, Response, cnf, fetch, http, log;
 
   log = require('./log');
 
-  tag = 'rpc';
-
-  sse = '_remoteReady';
+  cnf = require('./config');
 
   exports.Remote = Remote = (function() {
+    var send;
+
     function Remote(options) {
       var ctx, fn, i, len, method, ref;
       ctx = {
@@ -23,7 +23,7 @@
         request: (options.url || location.origin) + "/" + options["class"]
       };
       options.methods = options.methods || [];
-      options.methods.push(sse);
+      options.methods.push(cnf.sse);
       ref = options.methods;
       fn = (function(_this) {
         return function(method) {
@@ -42,38 +42,38 @@
       }
     }
 
+    send = function(request, msg) {
+      log(msg.id + " out", msg);
+      return new Promise(function(resolve, reject) {
+        return fetch(request, {
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8'
+          },
+          method: 'post',
+          body: JSON.stringify(msg)
+        })["catch"](function(err) {
+          log(msg.id + ": network error " + err);
+          return reject(err);
+        }).then(function(response) {
+          if (response) {
+            return response.json();
+          }
+        }).then(function(rep) {
+          if (rep) {
+            log(msg.id + " in", rep);
+            if (rep.err) {
+              return reject(rep.err);
+            } else {
+              return resolve(rep.rep);
+            }
+          }
+        });
+      });
+    };
+
     return Remote;
 
   })();
-
-  send = function(request, msg) {
-    log(msg.id + " out", msg);
-    return new Promise(function(resolve, reject) {
-      return fetch(request, {
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8'
-        },
-        method: 'post',
-        body: JSON.stringify(msg)
-      })["catch"](function(err) {
-        log(msg.id + ": network error " + err);
-        return reject(err);
-      }).then(function(response) {
-        if (response) {
-          return response.json();
-        }
-      }).then(function(rep) {
-        if (rep) {
-          log(msg.id + " in", rep);
-          if (rep.err) {
-            return reject(rep.err);
-          } else {
-            return resolve(rep.rep);
-          }
-        }
-      });
-    });
-  };
 
   exports.expose = function(local, remote, url) {
     var method, methods, obj;
@@ -90,15 +90,15 @@
     })();
     remote = remote || (
       obj = {},
-      obj["" + sse] = function() {
+      obj["" + cnf.sse] = function() {
         return log("missing remote object in expose");
       },
       obj
     );
     return new Promise(function(resolve, reject) {
       var source;
-      source = new EventSource(url ? url + "/" + tag : tag);
-      return source.addEventListener(tag, function(e) {
+      source = new EventSource(url ? url + "/" + cnf.tag : cnf.tag);
+      return source.addEventListener(cnf.tag, function(e) {
         var msg;
         log('SSE in', e.data);
         msg = JSON.parse(e.data);
@@ -109,7 +109,7 @@
             return log('SSE error: no method', msg.method, 'for local object', local);
           }
         } else if (msg.uid) {
-          remote[sse](msg.uid, methods);
+          remote[cnf.sse](msg.uid, methods);
           return resolve(source);
         }
       }, false);
