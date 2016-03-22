@@ -6,47 +6,44 @@
  */
 
 (function() {
-  var fs, routes;
+  var all, fs, routes;
 
   fs = require('fs');
 
   routes = [];
 
+  all = '*';
+
   module.exports = function() {
     var app;
     app = function(req, res) {
-      var body;
-      body = [];
-      req.on('data', function(chunk) {
-        return body.push(chunk);
-      });
-      return req.on('end', function() {
-        var route;
-        if (route = routes[req.url]) {
-          req.body = Buffer.concat(body).toString();
-          if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/json') > -1) {
-            req.body = JSON.parse(req.body);
+      var index, next, roads, root;
+      if (routes[req.url]) {
+        roads = (root = routes[all]) ? root.concat(routes[req.url]) : routes[req.url];
+        index = 0;
+        return (next = function() {
+          if (index < roads.length) {
+            return roads[index++](req, res, next);
           }
-          res.send = function(msg) {
-            return res.end(JSON.stringify(msg));
-          };
-          return route(req, res);
-        } else {
-          return fs.readFile("./" + req.url, function(err, data) {
-            res.statusCode = !err ? 200 : 404;
-            return res.end(data);
-          });
-        }
-      });
+        })();
+      } else {
+        return fs.readFile("./" + req.url, function(err, data) {
+          res.statusCode = !err ? 200 : 404;
+          return res.end(data);
+        });
+      }
     };
-    app.post = function(path, route) {
-      return routes[path] = route;
-    };
-    app.get = function(path, route) {
-      return routes[path] = route;
-    };
-    app.use = function(path, route) {
-      return routes[path] = route;
+    app.post = app.get = app.use = function(path, route) {
+      var road;
+      if (typeof path === 'function') {
+        route = path;
+        path = all;
+      }
+      if (road = routes[path]) {
+        return road.push(route);
+      } else {
+        return routes[path] = [route];
+      }
     };
     return app;
   };

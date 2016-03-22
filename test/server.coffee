@@ -5,14 +5,11 @@
 
 http = require 'http'
 express = require 'express'
-parser = require 'body-parser'
+#connect = require 'connect'
+expressRpc = require('avs-easyrpc').server
 
 store = express()
 store.use express.static(__dirname + '/')
-store.use parser.json limit:'512kb'
-store.use (err, req, res, next) -> log err.stack; next err
-
-expressRpc = require('avs-easyrpc').server
 
 port = 4145
 http.createServer store

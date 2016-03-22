@@ -59,17 +59,28 @@ class classServer # for Http POST
 #
 # Class expressRpc: dispatch incoming HTTP requests / class
 #
+json = (req, res, next) ->
+  body = []
+  req.on 'data', (chunk) -> body.push chunk
+  req.on 'end', ->
+    req.body = Buffer.concat(body).toString()
+    if req.headers['content-type'] and req.headers['content-type'].indexOf('application/json') > -1
+      req.body = JSON.parse req.body
+      unless res.send then res.send = (msg) -> res.end JSON.stringify msg 
+    next()
+
 module.exports = (app, classes, options = {}) ->
   process.on 'uncaughtException', (err) -> log 'Caught exception: ', err.stack
   server = new classServer classes, options.timeOut
+  app.use json
   ( (Class) -> 
     log "listening on class #{Class}"
-    app.post "/#{Class}", (req, res) -> server.process Class, req.body, res
+    app.use "/#{Class}", (req, res) -> server.process Class, req.body, res
   ) Class for Class of classes
 #
 # Add SSE Support
 #
-  app.get "/#{cnf.tag}", (req, res, next) -> new Channel req, res, next
+  app.use "/#{cnf.tag}", (req, res, next) -> new Channel req, res, next
 
 class Remote
   constructor: (@_sseChannel, methods) -> 

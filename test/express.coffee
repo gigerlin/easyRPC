@@ -5,24 +5,20 @@
 
 fs = require 'fs'
 
-routes = []
+routes = []; all = '*'
 module.exports = ->
   app = (req, res) ->
-    #console.log req.headers
-    body = []
-    req.on 'data', (chunk) -> body.push chunk
-    req.on 'end', ->
-      if route = routes[req.url]
-        req.body = Buffer.concat(body).toString() 
-        req.body = JSON.parse req.body if req.headers['content-type'] and req.headers['content-type'].indexOf('application/json') > -1
-        res.send = (msg) -> res.end JSON.stringify msg
-        route req, res
-      else # this is a file
-        fs.readFile "./#{req.url}", (err, data) ->
-          res.statusCode = unless err then 200 else 404
-          res.end data
+    if routes[req.url]
+      roads = if root = routes[all] then root.concat(routes[req.url]) else routes[req.url]
+      index = 0
+      (next = -> if index < roads.length then roads[index++] req, res, next)()    
+    else # this is a file
+      fs.readFile "./#{req.url}", (err, data) ->
+        res.statusCode = unless err then 200 else 404
+        res.end data
 
-  app.post= (path, route) -> routes[path] = route
-  app.get = (path, route) -> routes[path] = route
-  app.use = (path, route) -> routes[path] = route
+  app.post = app.get = app.use = (path, route) -> 
+    if typeof path is 'function' then route = path; path = all
+    if road = routes[path] then road.push route else routes[path] = [route]
+
   return app 

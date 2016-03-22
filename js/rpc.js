@@ -6,7 +6,7 @@
  */
 
 (function() {
-  var Channel, Remote, Rpc, classServer, cnf, log;
+  var Channel, Remote, Rpc, classServer, cnf, json, log;
 
   log = require('./log');
 
@@ -112,6 +112,26 @@
 
   })();
 
+  json = function(req, res, next) {
+    var body;
+    body = [];
+    req.on('data', function(chunk) {
+      return body.push(chunk);
+    });
+    return req.on('end', function() {
+      req.body = Buffer.concat(body).toString();
+      if (req.headers['content-type'] && req.headers['content-type'].indexOf('application/json') > -1) {
+        req.body = JSON.parse(req.body);
+        if (!res.send) {
+          res.send = function(msg) {
+            return res.end(JSON.stringify(msg));
+          };
+        }
+      }
+      return next();
+    });
+  };
+
   module.exports = function(app, classes, options) {
     var Class, fn, server;
     if (options == null) {
@@ -121,16 +141,17 @@
       return log('Caught exception: ', err.stack);
     });
     server = new classServer(classes, options.timeOut);
+    app.use(json);
     fn = function(Class) {
       log("listening on class " + Class);
-      return app.post("/" + Class, function(req, res) {
+      return app.use("/" + Class, function(req, res) {
         return server.process(Class, req.body, res);
       });
     };
     for (Class in classes) {
       fn(Class);
     }
-    return app.get("/" + cnf.tag, function(req, res, next) {
+    return app.use("/" + cnf.tag, function(req, res, next) {
       return new Channel(req, res, next);
     });
   };
