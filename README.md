@@ -9,6 +9,8 @@ Since it is based on pure HTTP, it should pass through main corporate firewalls.
 
 From version 1.3.0, easyRPC can be used also in Node. When the client runs in Node, the server URL must be used when creating remote ojbects and event sources.
 
+On the server side, a web framework is needed in addition to the Node http server. Tests have been made with `express` and `connect`. A minimalist framework (called express) is also provided in the test directory.
+
 ### Installation
 `npm install avs-easyrpc`
 
@@ -49,7 +51,7 @@ var test = express();
 
 // Load the employee class
 var expressRpc = require('avs-easyrpc').Server;
-expressRpc(test, { Employee: require('./employee') }, { timeOut: 10 * 60 * 1000, limit: '512kb' });
+expressRpc(test, { Employee: require('./employee') }, { timeOut: 10 * 60 * 1000 });
 
 // Listen on port 8080
 var http = require('http');
@@ -58,8 +60,6 @@ http.createServer(test).listen(8080, function() {
   });
 ```  
 On the first invocation, the remote object is created and subsequent invocations will be processed by this object. The timeOut option is the maximum inactivity duration of the remote object on the server, i.e., the session duration. If no request is made to the object in that period of time, the remote object is deleted. An invocation that happens after timeOut is reached will create a new object. Default timeOut is 30 minutes.
-
-A second option is the maximum size of data transferred to remote object.Default is 512kb. Make it bigger if need be.
 
 Exposed classes are needed so that the server can instantiate the objects requested by the browser. For example, the file employee.js could be:
 
