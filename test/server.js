@@ -18,6 +18,10 @@
 
   store.use(express["static"](__dirname + '/'));
 
+  process.on('uncaughtException', function(err) {
+    return console.log('Caught exception: ', err.stack);
+  });
+
   port = 4145;
 
   http.createServer(store).listen(port, function() {

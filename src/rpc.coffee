@@ -70,7 +70,6 @@ json = (req, res, next) ->
     next()
 
 module.exports = (app, classes, options = {}) ->
-  process.on 'uncaughtException', (err) -> log 'Caught exception: ', err.stack
   server = new classServer classes, options.timeOut
   app.use json
   ( (Class) -> 

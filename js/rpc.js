@@ -137,9 +137,6 @@
     if (options == null) {
       options = {};
     }
-    process.on('uncaughtException', function(err) {
-      return log('Caught exception: ', err.stack);
-    });
     server = new classServer(classes, options.timeOut);
     app.use(json);
     fn = function(Class) {
