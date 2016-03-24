@@ -15,8 +15,6 @@
     url: url
   });
 
-  remote.getProfile('alice');
-
   Test = (function() {
     function Test() {}
 
@@ -30,10 +28,6 @@
 
   })();
 
-  expose(new Test(), remote, url).then(function(rep) {
-    return remote.speak('Hello from nodejs');
-  });
-
   remote = new Remote({
     "class": 'doesnotexist',
     methods: ['test'],
@@ -41,9 +35,9 @@
   });
 
   remote.test().then(function(rep) {
-    return console.log(rep);
+    return console.log('then', rep);
   })["catch"](function(err) {
-    return console.log(err);
+    return console.log('cath', err);
   });
 
 }).call(this);

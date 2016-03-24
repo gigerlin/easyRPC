@@ -18,7 +18,6 @@
     var app;
     app = function(req, res) {
       var index, next, roads, root;
-      console.log('processing', req.url);
       if (routes[req.url]) {
         roads = (root = routes[all]) ? root.concat(routes[req.url]) : routes[req.url];
         index = 0;

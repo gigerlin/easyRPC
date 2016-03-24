@@ -6,11 +6,25 @@
  */
 
 (function() {
-  var Promise, fetch;
+  var Promise, Response, fetch;
 
   if (typeof window === 'object') {
     Promise = window.Promise || require('./promise');
   }
+
+  Response = (function() {
+    function Response(data, ok) {
+      this.data = data;
+      this.ok = ok != null ? ok : true;
+    }
+
+    Response.prototype.json = function() {
+      return JSON.parse(this.data);
+    };
+
+    return Response;
+
+  })();
 
   module.exports = fetch = function(uri, options) {
     return new Promise(function(resolve, reject) {
@@ -20,9 +34,11 @@
       xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
       xhr.send(options.body || null);
       xhr.onload = function() {
-        return resolve({
-          data: xhr.response
-        });
+        if (xhr.response.indexOf('"') === -1) {
+          return reject(xhr.response);
+        } else {
+          return resolve(new Response(xhr.response));
+        }
       };
       return xhr.onerror = function() {
         return reject("xhr error: " + xhr.statusText);

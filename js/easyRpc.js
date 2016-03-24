@@ -6,7 +6,7 @@
  */
 
 (function() {
-  var EventSource, Promise, Remote, cnf, fetch, http, log;
+  var EventSource, Promise, Remote, Response, cnf, fetch, http, log;
 
   log = require('./log');
 
@@ -52,20 +52,23 @@
           method: 'post',
           body: JSON.stringify(msg)
         })["catch"](function(err) {
-          log(msg.id + ": network error", err);
+          log(msg.id + " in: network error", err);
           return reject(err);
         }).then(function(response) {
-          var error, rep;
-          log(msg.id + " in", response.data);
-          try {
-            rep = JSON.parse(response.data);
+          if (response.ok) {
+            return response.json();
+          } else {
+            log(msg.id + " in: network error", response.statusText);
+            return reject(response.statusText);
+          }
+        }).then(function(rep) {
+          if (rep) {
+            log(msg.id + " in", rep);
             if (rep.err) {
               return reject(rep.err);
             } else {
               return resolve(rep.rep);
             }
-          } catch (error) {
-            return reject(response.data);
           }
         });
       });
@@ -138,9 +141,11 @@
         req = http.request(options, function(res) {
           res.setEncoding('utf8');
           return res.on('data', function(body) {
-            return resolve({
-              data: body
-            });
+            if (body.indexOf('"') === -1) {
+              return reject(body);
+            } else {
+              return resolve(new Response(body));
+            }
           });
         });
         req.on('error', function(e) {
@@ -151,5 +156,19 @@
       });
     };
   }
+
+  Response = (function() {
+    function Response(data, ok) {
+      this.data = data;
+      this.ok = ok != null ? ok : true;
+    }
+
+    Response.prototype.json = function() {
+      return JSON.parse(this.data);
+    };
+
+    return Response;
+
+  })();
 
 }).call(this);

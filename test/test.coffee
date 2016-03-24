@@ -22,6 +22,10 @@ class Deux
 expose new Deux(), new Remote class:'Customer'
 .then (source) -> src = source
 
+rem2 = new Remote class:'doesnotexist', methods:['test']
+rem2.test()
+.then (rep) -> console.log rep
+.catch (err) -> console.log err
 
 ###
 remote.getProfile 'john'

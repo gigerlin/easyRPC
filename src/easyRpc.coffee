@@ -23,15 +23,16 @@ exports.Remote = class Remote
     new Promise (resolve, reject) ->
       fetch request, headers:{'Content-Type':'application/json; charset=utf-8'}, method:'post', body:JSON.stringify msg
       .catch (err) -> 
-        log "#{msg.id}: network error", err
+        log "#{msg.id} in: network error", err
         reject err
       .then (response) -> 
-        log "#{msg.id} in", response.data    
-        try 
-          rep = JSON.parse response.data
-          if rep.err then reject rep.err else resolve rep.rep 
-        catch
-          reject response.data
+        if response.ok then response.json() 
+        else
+          log "#{msg.id} in: network error", response.statusText
+          reject response.statusText
+      .then (rep) -> if rep
+        log "#{msg.id} in", rep
+        if rep.err then reject rep.err else resolve rep.rep
 
 #
 # SSE Support
@@ -74,9 +75,12 @@ else if typeof global is 'object' # Nodejs
     options.port = tmp[1] if tmp[1]
     req = http.request options, (res) ->
       res.setEncoding('utf8')
-      res.on 'data', (body) -> resolve data:body
+      res.on 'data', (body) -> if body.indexOf('"') is -1 then reject body else resolve new Response body
     req.on 'error', (e) -> reject e.message
     req.write(options.body)
     req.end()
 
+class Response
+  constructor: (@data, @ok = true) ->
+  json: -> JSON.parse @data
 
