@@ -36,7 +36,7 @@
       } else if (this.local[msg.method]) {
         try {
           rep = (ref = this.local)[msg.method].apply(ref, msg.args);
-          if (typeof rep["catch"] === 'function') {
+          if (typeof rep.then === 'function') {
             rep.then(function(rep) {
               return _return(msg, {
                 rep: rep

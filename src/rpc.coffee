@@ -22,7 +22,7 @@ class Rpc # inspired from minimum-rpc
     else if @local[msg.method]
       try
         rep = @local[msg.method] msg.args...
-        if typeof rep.catch is 'function' # rep instanceof Promise
+        if typeof rep.then is 'function' # rep is thenable (ie, it is a Promise)
           rep.then (rep) ->  _return msg, rep:rep, res
           rep.catch (err) -> _return msg, err:err, res
         else _return msg, rep:rep, res

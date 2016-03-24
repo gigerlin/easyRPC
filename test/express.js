@@ -18,6 +18,7 @@
     var app;
     app = function(req, res) {
       var index, next, roads, root;
+      console.log('processing', req.url);
       if (routes[req.url]) {
         roads = (root = routes[all]) ? root.concat(routes[req.url]) : routes[req.url];
         index = 0;
@@ -28,8 +29,13 @@
         })();
       } else {
         return fs.readFile("./" + req.url, function(err, data) {
-          res.statusCode = !err ? 200 : 404;
-          return res.end(data);
+          if (err) {
+            res.statusCode = 404;
+            return res.end("error: no class " + (req.url.substring(1)));
+          } else {
+            res.statusCode = 200;
+            return res.end(data);
+          }
         });
       }
     };

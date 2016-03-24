@@ -34,4 +34,16 @@
     return remote.speak('Hello from nodejs');
   });
 
+  remote = new Remote({
+    "class": 'doesnotexist',
+    methods: ['test'],
+    url: url
+  });
+
+  remote.test().then(function(rep) {
+    return console.log(rep);
+  })["catch"](function(err) {
+    return console.log(err);
+  });
+
 }).call(this);

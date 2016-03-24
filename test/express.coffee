@@ -14,8 +14,12 @@ module.exports = ->
       (next = -> if index < roads.length then roads[index++] req, res, next)()    
     else # this is a file
       fs.readFile "./#{req.url}", (err, data) ->
-        res.statusCode = unless err then 200 else 404
-        res.end data
+        if err
+          res.statusCode = 404
+          res.end "error: no class #{req.url.substring(1)}"   
+         else 
+          res.statusCode = 200
+          res.end data
 
   app.post = app.get = app.use = (path, route) -> 
     if typeof path is 'function' then route = path; path = all

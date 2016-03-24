@@ -6,24 +6,11 @@
  */
 
 (function() {
-  var Promise, Response, fetch;
+  var Promise, fetch;
 
   if (typeof window === 'object') {
     Promise = window.Promise || require('./promise');
   }
-
-  Response = (function() {
-    function Response(data) {
-      this.data = data;
-    }
-
-    Response.prototype.json = function() {
-      return JSON.parse(this.data);
-    };
-
-    return Response;
-
-  })();
 
   module.exports = fetch = function(uri, options) {
     return new Promise(function(resolve, reject) {
@@ -33,7 +20,9 @@
       xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
       xhr.send(options.body || null);
       xhr.onload = function() {
-        return resolve(new Response(xhr.response));
+        return resolve({
+          data: xhr.response
+        });
       };
       return xhr.onerror = function() {
         return reject("xhr error: " + xhr.statusText);

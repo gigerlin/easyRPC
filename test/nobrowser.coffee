@@ -12,3 +12,9 @@ class Test
 
 expose new Test(), remote, url
 .then (rep) -> remote.speak 'Hello from nodejs'
+
+
+remote = new Remote class:'doesnotexist', methods:['test'], url:url
+remote.test()
+.then (rep) -> console.log rep
+.catch (err) -> console.log err
