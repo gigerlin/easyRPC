@@ -6,4 +6,6 @@
 module.exports = 
   tag: 'rpc'
   sse: '_remoteReady'
+  srv: 'channel response'
+  p2p: 'Peer 2 Peer'
   sessionTimeOut: 30 * 60 * 1000 # 30 minutes

@@ -6,21 +6,23 @@
  */
 
 (function() {
-  var EventSource, Promise, Remote, Response, cnf, fetch, http, log;
+  var EventSource, Promise, Remote, Response, className, cnf, fetch, http, log, send;
 
   log = require('./log');
 
   cnf = require('./config');
 
-  exports.Remote = Remote = (function() {
-    var send;
+  className = 'class name';
 
+  exports.Remote = Remote = (function() {
     function Remote(options) {
-      var ctx, fn, i, len, method, ref;
+      var count, ctx, fn, i, len, method, ref, uid;
+      this[className] = options["class"];
+      count = 0;
+      uid = Math.random().toString().substring(2, 10);
       ctx = {
-        count: 0,
-        uid: Math.random().toString().substring(2, 10),
-        request: (options.url || location.origin) + "/" + options["class"]
+        use: options.use,
+        request: (options.url || location.origin) + "/" + (encodeURIComponent(options["class"]))
       };
       options.methods = options.methods || [];
       options.methods.push(cnf.sse);
@@ -28,10 +30,10 @@
       fn = (function(_this) {
         return function(method) {
           return _this[method] = function() {
-            return send(ctx.request, {
+            return send(ctx, {
               method: method,
               args: [].slice.call(arguments),
-              id: ctx.uid + "-" + (++ctx.count)
+              id: uid + "-" + (++count)
             });
           };
         };
@@ -42,45 +44,50 @@
       }
     }
 
-    send = function(request, msg) {
-      log(msg.id + " out", msg);
-      return new Promise(function(resolve, reject) {
-        return fetch(request, {
-          headers: {
-            'Content-Type': 'application/json; charset=utf-8'
-          },
-          method: 'post',
-          body: JSON.stringify(msg)
-        })["catch"](function(err) {
-          log(msg.id + " in: network error", err);
-          return reject(err);
-        }).then(function(response) {
-          if (response.ok) {
-            return response.json();
-          } else {
-            log(msg.id + " in: network error", response.statusText);
-            return reject(response.statusText);
-          }
-        }).then(function(rep) {
-          if (rep) {
-            log(msg.id + " in", rep);
-            if (rep.err) {
-              return reject(rep.err);
-            } else {
-              return resolve(rep.rep);
-            }
-          }
-        });
-      });
-    };
-
     return Remote;
 
   })();
 
+  send = function(ctx, msg) {
+    log(msg.id + " out", msg);
+    if (ctx.use) {
+      msg.args = [ctx.use, msg.method].concat(msg.args);
+      msg.method = 'invoke';
+    }
+    return new Promise(function(resolve, reject) {
+      return fetch(ctx.request, {
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8'
+        },
+        method: 'post',
+        body: JSON.stringify(msg)
+      })["catch"](function(err) {
+        log(msg.id + " in", err);
+        return reject(err);
+      }).then(function(response) {
+        if (response.ok) {
+          return response.json();
+        } else {
+          log(msg.id + " in network error", response.statusText);
+          return reject(response.statusText);
+        }
+      }).then(function(rep) {
+        if (rep) {
+          log(msg.id + " in", rep);
+          if (rep.err) {
+            return reject(rep.err);
+          } else {
+            return resolve(rep.rep);
+          }
+        }
+      });
+    });
+  };
+
   exports.expose = function(local, remote, url) {
     var method, methods, obj;
     local = local || {};
+    url = url || location.origin;
     methods = (function() {
       var results;
       results = [];
@@ -100,20 +107,26 @@
     );
     return new Promise(function(resolve, reject) {
       var source;
-      source = new EventSource(url ? url + "/" + cnf.tag : cnf.tag);
+      source = new EventSource(url + "/" + cnf.tag);
       return source.addEventListener(cnf.tag, function(e) {
-        var msg;
+        var msg, rep;
         log('SSE in', e.data);
         msg = JSON.parse(e.data);
         if (msg.method) {
           if (local[msg.method]) {
-            return local[msg.method].apply(local, msg.args);
+            rep = local[msg.method].apply(local, msg.args);
+            if (msg.args = rep) {
+              msg.method = cnf.srv;
+              return send({
+                request: url + "/" + (encodeURIComponent(remote[className]))
+              }, msg);
+            }
           } else {
             return log('SSE error: no method', msg.method, 'for local object', local);
           }
         } else if (msg.uid) {
-          remote[cnf.sse](msg.uid, methods);
-          return resolve(source);
+          resolve(source);
+          return remote[cnf.sse](msg.uid, methods);
         }
       }, false);
     });
@@ -138,6 +151,7 @@
         if (tmp[1]) {
           options.port = tmp[1];
         }
+        console.log(options);
         req = http.request(options, function(res) {
           res.setEncoding('utf8');
           return res.on('data', function(body) {

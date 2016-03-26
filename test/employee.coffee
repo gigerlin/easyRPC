@@ -7,8 +7,6 @@ if typeof Promise is 'undefined' then Promise = require('avs-easyrpc').Promise
 chat = [] # the list of all members
 count = 0 # automatic naming of members
 
-# !!! __sse is a reserved word
-
 module.exports = class Employee
 
   _remoteReady: (@remote) -> 'OK' # called when SSE channel opens 

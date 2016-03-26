@@ -6,37 +6,42 @@
  */
 
 (function() {
-  var Channel, Remote, Rpc, classServer, cnf, json, log;
+  var Channel, ChannelQ, Remote, Rpc, classServer, cnf, getSession, json, log, p2p, sseChannel;
 
   log = require('./log');
 
   cnf = require('./config');
 
+  sseChannel = 'c hannel';
+
   Rpc = (function() {
     var _return;
 
-    function Rpc(local) {
-      this.local = local;
+    function Rpc(local1) {
+      this.local = local1;
     }
 
     Rpc.prototype.process = function(msg, res) {
-      var e, error, ref, rep;
+      var e, error, ref, rep, uid;
       log(msg.id + " in", msg);
       if (msg.method === cnf.sse) {
         if (typeof this.local[cnf.sse] === 'function') {
-          this.local[cnf.sse](new Remote(Channel.channels[msg.args[0]], msg.args[1]));
-          return _return(msg, {
-            rep: 'sse OK'
+          _return(msg, {
+            rep: uid = "r-" + (Number(new Date()))
           }, res);
+          this.local[sseChannel] = new ChannelQ(msg.args[0]);
+          return this.local[cnf.sse](new Remote(this.local, msg), uid);
         } else {
           return _return(msg, {
             err: "error: no _remoteReady method for channel " + msg.args[0]
           }, res);
         }
+      } else if (msg.method === cnf.srv) {
+        return this.local[sseChannel].resolve(msg);
       } else if (this.local[msg.method]) {
         try {
           rep = (ref = this.local)[msg.method].apply(ref, msg.args);
-          if (typeof rep.then === 'function') {
+          if (rep && typeof rep.then === 'function') {
             rep.then(function(rep) {
               return _return(msg, {
                 rep: rep
@@ -74,21 +79,35 @@
 
   })();
 
+  p2p = require('./p2p');
+
+  getSession = function(msg) {
+    if (msg.id) {
+      return msg.id.split('-')[0];
+    }
+  };
+
   classServer = (function() {
     function classServer(classes, timeOut) {
       var Class;
       this.timeOut = timeOut != null ? timeOut : cnf.sessionTimeOut;
       for (Class in classes) {
-        this["def " + Class] = {
-          Class: classes[Class],
-          sessions: []
-        };
+        if (typeof classes[Class] === 'function') {
+          this["def " + Class] = {
+            Class: classes[Class],
+            sessions: []
+          };
+        }
       }
+      this["def " + cnf.p2p] = {
+        Class: p2p,
+        sessions: []
+      };
     }
 
     classServer.prototype.process = function(Class, msg, res) {
       var rpc, uid;
-      uid = msg.id.split('-')[0];
+      uid = getSession(msg);
       if (rpc = this["def " + Class].sessions[uid]) {
         clearTimeout(rpc.timeOut);
       } else {
@@ -139,9 +158,12 @@
     }
     server = new classServer(classes, options.timeOut);
     app.use(json);
+    app.use("/" + (encodeURIComponent(cnf.p2p)), function(req, res) {
+      return server.process(cnf.p2p, req.body, res);
+    });
     fn = function(Class) {
       log("listening on class " + Class);
-      return app.use("/" + Class, function(req, res) {
+      return app.use("/" + (encodeURIComponent(Class)), function(req, res) {
         return server.process(Class, req.body, res);
       });
     };
@@ -154,21 +176,21 @@
   };
 
   Remote = (function() {
-    function Remote(_sseChannel, methods) {
-      var ctx, fn, i, len, method, ref;
-      this._sseChannel = _sseChannel;
-      ctx = {
-        count: 0,
-        uid: Math.random().toString().substring(2, 10)
-      };
-      ref = methods || [];
+    var send;
+
+    function Remote(local, msg) {
+      var count, fn, i, len, method, ref, uid;
+      this._sseChannel = Channel.channels[msg.args[0]];
+      count = 0;
+      uid = getSession(msg);
+      ref = msg.args[1] || [];
       fn = (function(_this) {
         return function(method) {
           return _this[method] = function() {
-            return _this._sseChannel.send({
+            return send(_this._sseChannel, local[sseChannel], {
               method: method,
               args: [].slice.call(arguments),
-              id: ctx.uid + "-" + (++ctx.count)
+              id: uid + "-s" + (++count)
             });
           };
         };
@@ -179,6 +201,13 @@
       }
     }
 
+    send = function(channel, q, msg) {
+      return new Promise(function(resolve, reject) {
+        q.push(msg, resolve);
+        return channel.send(msg);
+      });
+    };
+
     return Remote;
 
   })();
@@ -188,7 +217,7 @@
 
     function Channel(req, resp, next) {
       this.resp = resp;
-      Channel.channels[this.uid = Number(new Date()).toString()] = this;
+      Channel.channels[this.uid = "c-" + (Number(new Date()))] = this;
       this.resp.statusCode = 200;
       this.resp.setHeader('Content-Type', 'text/event-stream');
       this.resp.setHeader('Cache-Control', 'no-cache');
@@ -218,5 +247,31 @@
     return Channel;
 
   })();
+
+  ChannelQ = (function() {
+    function ChannelQ(uid1) {
+      this.uid = uid1;
+      this.queue = [];
+    }
+
+    ChannelQ.prototype.push = function(msg, resolve) {
+      return this.queue[msg.id] = resolve;
+    };
+
+    ChannelQ.prototype.resolve = function(msg) {
+      var resolve;
+      if (resolve = this.queue[msg.id]) {
+        resolve(msg.args);
+        return delete this.queue[msg.id];
+      }
+    };
+
+    return ChannelQ;
+
+  })();
+
+  process.on('uncaughtException', function(err) {
+    return console.log('Caught exception: ', err.stack);
+  });
 
 }).call(this);

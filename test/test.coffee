@@ -7,6 +7,7 @@ class Test
   echo: (user, text...) -> 
     console.log "#{user}:", text...
     $('#messages').append($('<li>').text("#{user}:#{text[0]}"))
+    null # to prevent sending response to server
 
 expose new Test(), remote # this starts the SSE so that the Test object can be invoked
 .then -> remote.speak 'hello'
@@ -17,7 +18,10 @@ remote.prespeak = -> # called by HTML button
 
 src = null
 class Deux
-  test: (msg) -> console.log 'deux: ', msg; src.close()
+  test: (msg) -> 
+    console.log 'deux: ', msg
+    src.close()
+    null
 
 expose new Deux(), new Remote class:'Customer'
 .then (source) -> src = source

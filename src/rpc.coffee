@@ -8,6 +8,7 @@
 #
 log = require './log'
 cnf = require './config'
+sseChannel = 'c hannel'
 
 class Rpc # inspired from minimum-rpc
   constructor: (@local) ->
@@ -15,14 +16,18 @@ class Rpc # inspired from minimum-rpc
   process: (msg, res) ->
     log "#{msg.id} in", msg
     if msg.method is cnf.sse # SSE Support
-      if typeof @local[cnf.sse] is 'function'
-        @local[cnf.sse] new Remote Channel.channels[msg.args[0]], msg.args[1]
-        _return msg, rep:'sse OK', res
+      if typeof @local[cnf.sse] is 'function' # channel opens, cnf.sse is called
+        _return msg, rep:uid = "r-#{Number new Date()}", res
+        @local[sseChannel] = new ChannelQ msg.args[0]
+        @local[cnf.sse] new Remote(@local, msg), uid
       else _return msg, err:"error: no _remoteReady method for channel #{msg.args[0]}", res
-    else if @local[msg.method]
+    else if msg.method is cnf.srv
+      @local[sseChannel].resolve msg
+
+    else if @local[msg.method] # standard remote
       try
         rep = @local[msg.method] msg.args...
-        if typeof rep.then is 'function' # rep is thenable (ie, it is a Promise)
+        if rep and typeof rep.then is 'function' # rep is thenable (ie, it is a Promise)
           rep.then (rep) ->  _return msg, rep:rep, res
           rep.catch (err) -> _return msg, err:err, res
         else _return msg, rep:rep, res
@@ -36,12 +41,17 @@ class Rpc # inspired from minimum-rpc
 #
 # Class Server
 #
+p2p = require './p2p'
+getSession = (msg) -> msg.id.split('-')[0] if msg.id
+
 class classServer # for Http POST
   constructor: (classes, @timeOut = cnf.sessionTimeOut) -> # list of classes that the server can instantiate
-    @["def #{Class}"] = Class:classes[Class], sessions:[] for Class of classes # 'def Class' to allow Class = process
+    for Class of classes when typeof classes[Class] is 'function'
+      @["def #{Class}"] = Class:classes[Class], sessions:[] # 'def Class' to allow Class = process
+    @["def #{cnf.p2p}"] = Class:p2p, sessions:[]
 
   process: (Class, msg, res) ->
-    uid = msg.id.split('-')[0] # get session ID
+    uid = getSession msg # get session ID
     if rpc = @["def #{Class}"].sessions[uid] then clearTimeout rpc.timeOut
     else # new session / new object
       # @[Class].date = new Date()
@@ -72,9 +82,11 @@ json = (req, res, next) ->
 module.exports = (app, classes, options = {}) ->
   server = new classServer classes, options.timeOut
   app.use json
+  app.use "/#{encodeURIComponent cnf.p2p}", (req, res) -> server.process cnf.p2p, req.body, res
+  # TODO uriEncode Class to prevent funny class names
   ( (Class) -> 
     log "listening on class #{Class}"
-    app.use "/#{Class}", (req, res) -> server.process Class, req.body, res
+    app.use "/#{encodeURIComponent Class}", (req, res) -> server.process Class, req.body, res
   ) Class for Class of classes
 #
 # Add SSE Support
@@ -82,16 +94,22 @@ module.exports = (app, classes, options = {}) ->
   app.use "/#{cnf.tag}", (req, res, next) -> new Channel req, res, next
 
 class Remote
-  constructor: (@_sseChannel, methods) -> 
-    ctx = count:0, uid:Math.random().toString().substring(2, 10)
+  constructor: (local, msg) -> 
+    @_sseChannel = Channel.channels[msg.args[0]]
+    count = 0; uid = getSession msg # send message with same session ID
 
-    ( (method) => @[method] = => @_sseChannel.send method:method, args:[].slice.call(arguments), id:"#{ctx.uid}-#{++ctx.count}"
-    ) method for method in methods or []
+    ( (method) => @[method] = => send @_sseChannel, local[sseChannel], method:method, args:[].slice.call(arguments), id:"#{uid}-s#{++count}"
+    ) method for method in msg.args[1] or []
+
+  send = (channel, q, msg) ->
+    new Promise (resolve, reject) ->
+      q.push msg, resolve
+      channel.send msg
 
 class Channel
   @channels:[]
   constructor: (req, @resp, next) ->
-    Channel.channels[@uid = Number(new Date()).toString()] = @
+    Channel.channels[@uid = "c-#{Number new Date()}"] = @
     @resp.statusCode = 200
     @resp.setHeader 'Content-Type', 'text/event-stream'
     @resp.setHeader 'Cache-Control', 'no-cache'
@@ -108,4 +126,13 @@ class Channel
     log "#{msg.id} out #{@uid}", msg
     @resp.write "event: #{cnf.tag}\ndata: #{JSON.stringify msg}\n\n"
 
+class ChannelQ
+  constructor: (@uid) -> @queue = []
+  push: (msg, resolve) -> @queue[msg.id] = resolve
+  resolve: (msg) -> 
+    if resolve = @queue[msg.id]
+      resolve msg.args
+      delete @queue[msg.id]
+
+process.on 'uncaughtException', (err) -> console.log 'Caught exception: ', err.stack
 

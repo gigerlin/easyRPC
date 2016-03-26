@@ -19,7 +19,8 @@
       var text, user;
       user = arguments[0], text = 2 <= arguments.length ? slice.call(arguments, 1) : [];
       console.log.apply(console, [user + ":"].concat(slice.call(text)));
-      return $('#messages').append($('<li>').text(user + ":" + text[0]));
+      $('#messages').append($('<li>').text(user + ":" + text[0]));
+      return null;
     };
 
     return Test;
@@ -42,7 +43,8 @@
 
     Deux.prototype.test = function(msg) {
       console.log('deux: ', msg);
-      return src.close();
+      src.close();
+      return null;
     };
 
     return Deux;
