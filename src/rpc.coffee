@@ -18,7 +18,6 @@ class Rpc # inspired from minimum-rpc
     if msg.method is cnf.sse # SSE Support
       if typeof @local[cnf.sse] is 'function' # channel opens, cnf.sse is called
         _return msg, rep:uid = "r-#{Number new Date()}", res
-        @local[sseChannel] = new ChannelQ msg.args[0]
         @local[cnf.sse] new Remote(@local, msg), uid
       else _return msg, err:"error: no _remoteReady method for channel #{msg.args[0]}", res
     else if msg.method is cnf.srv
@@ -41,14 +40,12 @@ class Rpc # inspired from minimum-rpc
 #
 # Class Server
 #
-p2p = require './p2p'
-getSession = (msg) -> msg.id.split('-')[0] if msg.id
+getSession = (msg) -> msg.id.split('-')[0] if msg.id # get session ID
 
 class classServer # for Http POST
   constructor: (classes, @timeOut = cnf.sessionTimeOut) -> # list of classes that the server can instantiate
     for Class of classes when typeof classes[Class] is 'function'
       @["def #{Class}"] = Class:classes[Class], sessions:[] # 'def Class' to allow Class = process
-    @["def #{cnf.p2p}"] = Class:p2p, sessions:[]
 
   process: (Class, msg, res) ->
     uid = getSession msg # get session ID
@@ -95,7 +92,6 @@ module.exports = (app, classes, options = {}) ->
 
 class Remote
   constructor: (local, msg) -> 
-    @_sseChannel = Channel.channels[msg.args[0]]
     count = 0; uid = getSession msg # send message with same session ID
 
     ( (method) => @[method] = => send @_sseChannel, local[sseChannel], method:method, args:[].slice.call(arguments), id:"#{uid}-s#{++count}"
@@ -127,7 +123,7 @@ class Channel
     @resp.write "event: #{cnf.tag}\ndata: #{JSON.stringify msg}\n\n"
 
 class ChannelQ
-  constructor: (@uid) -> @queue = []
+  constructor: -> @queue = []
   push: (msg, resolve) -> @queue[msg.id] = resolve
   resolve: (msg) -> 
     if resolve = @queue[msg.id]

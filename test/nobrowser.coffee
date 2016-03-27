@@ -27,9 +27,9 @@ remote.test()
 p2p = new Remote class:'Peer 2 Peer', url:url
 expose new Test(), p2p, url
 .then (source) -> # return uid of peer
-  console.log 'p2p', source.uid
+  console.log 'p2p', source.remoteID
 
   # client 2
-  bob = new Remote class:'Peer 2 Peer', methods:['echo', 'test'], url:url, use:source.uid
+  bob = new Remote class:'Peer 2 Peer', methods:['echo', 'test'], url:url, use:source.remoteID  
   bob.echo 'bob', msg:'Hello for peer 1234' # no return value
-  bob.test()
+  # bob.test()

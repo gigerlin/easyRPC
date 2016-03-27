@@ -6,7 +6,7 @@
  */
 
 (function() {
-  var EventSource, Promise, Remote, Response, className, cnf, fetch, http, log, send;
+  var EventSource, Promise, Remote, Response, Source, className, cnf, fetch, http, log, send;
 
   log = require('./log');
 
@@ -19,7 +19,7 @@
       var count, ctx, fn, i, len, method, ref, uid;
       this[className] = options["class"];
       count = 0;
-      uid = Math.random().toString().substring(2, 10);
+      uid = cnf.random();
       ctx = {
         use: options.use,
         request: (options.url || location.origin) + "/" + (encodeURIComponent(options["class"]))
@@ -68,7 +68,7 @@
         if (response.ok) {
           return response.json();
         } else {
-          log(msg.id + " in network error", response.statusText);
+          log(msg.id + " in network error:", response.statusText);
           return reject(response.statusText);
         }
       }).then(function(rep) {
@@ -84,10 +84,26 @@
     });
   };
 
+  Source = (function() {
+    function Source(source1, remoteID1) {
+      this.source = source1;
+      this.remoteID = remoteID1;
+    }
+
+    Source.prototype.close = function() {
+      return source.close();
+    };
+
+    return Source;
+
+  })();
+
   exports.expose = function(local, remote, url) {
     var method, methods, obj;
+    if (url == null) {
+      url = location.origin;
+    }
     local = local || {};
-    url = url || location.origin;
     methods = (function() {
       var results;
       results = [];
@@ -108,25 +124,33 @@
     return new Promise(function(resolve, reject) {
       var source;
       source = new EventSource(url + "/" + cnf.tag);
-      return source.addEventListener(cnf.tag, function(e) {
-        var msg, rep;
-        log('SSE in', e.data);
-        msg = JSON.parse(e.data);
-        if (msg.method) {
-          if (local[msg.method]) {
-            rep = local[msg.method].apply(local, msg.args);
-            if (msg.args = rep) {
-              msg.method = cnf.srv;
-              return send({
-                request: url + "/" + (encodeURIComponent(remote[className]))
-              }, msg);
+      return source.addEventListener(cnf.tag, function(init) {
+        var msg;
+        log('SSE init', init.data);
+        msg = JSON.parse(init.data);
+        if (msg.uid) {
+          source.uid = msg.uid;
+          source.addEventListener(cnf.tag + "/" + msg.uid, function(e) {
+            var rep;
+            log('SSE in', e.type, e.data);
+            msg = JSON.parse(e.data);
+            if (msg.method) {
+              if (local[msg.method]) {
+                rep = local[msg.method].apply(local, msg.args);
+                if (msg.args = rep) {
+                  msg.method = cnf.srv;
+                  return send({
+                    request: url + "/" + (encodeURIComponent(remote[className]))
+                  }, msg);
+                }
+              } else {
+                return log('SSE error: no method', msg.method, 'for local object', local);
+              }
             }
-          } else {
-            return log('SSE error: no method', msg.method, 'for local object', local);
-          }
-        } else if (msg.uid) {
-          resolve(source);
-          return remote[cnf.sse](msg.uid, methods);
+          });
+          return remote[cnf.sse](msg.uid, methods).then(function(remoteID) {
+            return resolve(new Source(source, remoteID));
+          });
         }
       }, false);
     });
@@ -151,7 +175,6 @@
         if (tmp[1]) {
           options.port = tmp[1];
         }
-        console.log(options);
         req = http.request(options, function(res) {
           res.setEncoding('utf8');
           return res.on('data', function(body) {

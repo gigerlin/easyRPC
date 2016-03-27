@@ -43,7 +43,6 @@
 
     Deux.prototype.test = function(msg) {
       console.log('deux: ', msg);
-      src.close();
       return null;
     };
 

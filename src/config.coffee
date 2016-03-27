@@ -9,3 +9,4 @@ module.exports =
   srv: 'channel response'
   p2p: 'Peer 2 Peer'
   sessionTimeOut: 30 * 60 * 1000 # 30 minutes
+  random: -> Math.random().toString().substring(2, 10)

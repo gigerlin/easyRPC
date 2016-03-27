@@ -8,31 +8,29 @@
   module.exports = Peer2peer = (function() {
     function Peer2peer() {}
 
-    Peer2peer.prototype._remoteReady = function(remote, uid1) {
+    Peer2peer.prototype._remoteReady = function(remote, remoteID1) {
       this.remote = remote;
-      this.uid = uid1;
-      console.log('Peer2peer', this.uid);
-      return remotes[this.uid] = this.remote;
+      this.remoteID = remoteID1;
+      return remotes[this.remoteID] = this.remote;
     };
 
     Peer2peer.prototype.invoke = function() {
-      var args, method, uid;
-      uid = arguments[0], method = arguments[1], args = 3 <= arguments.length ? slice.call(arguments, 2) : [];
-      console.log('invoke', uid, method, remotes[uid] != null);
-      if (remotes[uid]) {
-        if (remotes[uid][method]) {
+      var args, method, remoteID;
+      remoteID = arguments[0], method = arguments[1], args = 3 <= arguments.length ? slice.call(arguments, 2) : [];
+      console.log('invoke', remoteID, method, remotes[remoteID] != null);
+      if (remotes[remoteID]) {
+        if (remotes[remoteID][method]) {
           return new Promise(function(resolve, reject) {
             var ref;
-            return (ref = remotes[uid])[method].apply(ref, args).then(function(rep) {
-              console.log(rep);
+            return (ref = remotes[remoteID])[method].apply(ref, args).then(function(rep) {
               return resolve(rep);
             });
           });
         } else {
-          throw "method " + method + " is unknown for object " + uid;
+          throw "method " + method + " is unknown for object " + remoteID;
         }
       } else {
-        throw "no object remote at " + uid;
+        throw "no object remote at " + remoteID;
       }
     };
 

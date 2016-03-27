@@ -6,7 +6,7 @@
  */
 
 (function() {
-  var Channel, ChannelQ, Remote, Rpc, classServer, cnf, getSession, json, log, p2p, sseChannel;
+  var Channel, ChannelQ, Remote, Rpc, classServer, cnf, getSession, json, log, sseChannel;
 
   log = require('./log');
 
@@ -27,9 +27,8 @@
       if (msg.method === cnf.sse) {
         if (typeof this.local[cnf.sse] === 'function') {
           _return(msg, {
-            rep: uid = "r-" + (Number(new Date()))
+            rep: uid = "r-" + (cnf.random())
           }, res);
-          this.local[sseChannel] = new ChannelQ(msg.args[0]);
           return this.local[cnf.sse](new Remote(this.local, msg), uid);
         } else {
           return _return(msg, {
@@ -79,8 +78,6 @@
 
   })();
 
-  p2p = require('./p2p');
-
   getSession = function(msg) {
     if (msg.id) {
       return msg.id.split('-')[0];
@@ -100,7 +97,7 @@
         }
       }
       this["def " + cnf.p2p] = {
-        Class: p2p,
+        Class: require('./p2p'),
         sessions: []
       };
     }
@@ -180,6 +177,7 @@
 
     function Remote(local, msg) {
       var count, fn, i, len, method, ref, uid;
+      local[sseChannel] = new ChannelQ();
       this._sseChannel = Channel.channels[msg.args[0]];
       count = 0;
       uid = getSession(msg);
@@ -216,13 +214,21 @@
     Channel.channels = [];
 
     function Channel(req, resp, next) {
+      var msg;
       this.resp = resp;
-      Channel.channels[this.uid = "c-" + (Number(new Date()))] = this;
+      Channel.channels[this.uid = "c-" + (cnf.random())] = this;
       this.resp.statusCode = 200;
       this.resp.setHeader('Content-Type', 'text/event-stream');
       this.resp.setHeader('Cache-Control', 'no-cache');
       this.resp.setHeader('Connection', 'keep-alive');
       this.resp.setHeader('Access-Control-Allow-Origin', '*');
+      log("SSE out " + this.uid, msg = {
+        uid: this.uid
+      });
+      this.resp.write("event: " + cnf.tag + "\ndata: " + (JSON.stringify(msg)) + "\n\n");
+      if (next) {
+        next();
+      }
       req.on('close', (function(_this) {
         return function() {
           log('SSE', _this.uid, 'closed');
@@ -230,18 +236,11 @@
           return _this.closed = true;
         };
       })(this));
-      this.send({
-        uid: this.uid,
-        id: 'SSE'
-      });
-      if (next) {
-        next();
-      }
     }
 
     Channel.prototype.send = function(msg) {
       log(msg.id + " out " + this.uid, msg);
-      return this.resp.write("event: " + cnf.tag + "\ndata: " + (JSON.stringify(msg)) + "\n\n");
+      return this.resp.write("event: " + cnf.tag + "/" + this.uid + "\ndata: " + (JSON.stringify(msg)) + "\n\n");
     };
 
     return Channel;
@@ -249,8 +248,7 @@
   })();
 
   ChannelQ = (function() {
-    function ChannelQ(uid1) {
-      this.uid = uid1;
+    function ChannelQ() {
       this.queue = [];
     }
 

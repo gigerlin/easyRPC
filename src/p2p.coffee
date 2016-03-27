@@ -4,18 +4,14 @@ remotes = []
 
 module.exports = class Peer2peer
 
-  _remoteReady: (@remote, @uid) -> 
-    console.log 'Peer2peer', @uid
-    remotes[@uid] = @remote
+  _remoteReady: (@remote, @remoteID) -> remotes[@remoteID] = @remote
 
-  invoke: (uid, method, args...) -> 
-    console.log 'invoke', uid, method, remotes[uid]?
-    if remotes[uid]
-      if remotes[uid][method] 
+  invoke: (remoteID, method, args...) -> 
+    console.log 'invoke', remoteID, method, remotes[remoteID]?
+    if remotes[remoteID]
+      if remotes[remoteID][method] 
         new Promise (resolve, reject) ->
-          remotes[uid][method] args... 
-          .then (rep) -> 
-            console.log rep
-            resolve rep
-      else throw "method #{method} is unknown for object #{uid}"
-    else throw "no object remote at #{uid}"
+          remotes[remoteID][method] args... 
+          .then (rep) -> resolve rep
+      else throw "method #{method} is unknown for object #{remoteID}"
+    else throw "no object remote at #{remoteID}"

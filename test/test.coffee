@@ -20,7 +20,7 @@ src = null
 class Deux
   test: (msg) -> 
     console.log 'deux: ', msg
-    src.close()
+    #src.close()
     null
 
 expose new Deux(), new Remote class:'Customer'
