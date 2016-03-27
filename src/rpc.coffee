@@ -17,7 +17,7 @@ class Rpc # inspired from minimum-rpc
     log "#{msg.id} in", msg
     if msg.method is cnf.sse # SSE Support
       if typeof @local[cnf.sse] is 'function' # channel opens, cnf.sse is called
-        _return msg, rep:uid = "r-#{Number new Date()}", res
+        _return msg, rep:uid = "r-#{cnf.random()}", res
         @local[cnf.sse] new Remote(@local, msg), uid
       else _return msg, err:"error: no _remoteReady method for channel #{msg.args[0]}", res
     else if msg.method is cnf.srv
@@ -46,6 +46,7 @@ class classServer # for Http POST
   constructor: (classes, @timeOut = cnf.sessionTimeOut) -> # list of classes that the server can instantiate
     for Class of classes when typeof classes[Class] is 'function'
       @["def #{Class}"] = Class:classes[Class], sessions:[] # 'def Class' to allow Class = process
+    @["def #{cnf.p2p}"] = Class:require('./p2p'), sessions:[]
 
   process: (Class, msg, res) ->
     uid = getSession msg # get session ID
@@ -80,7 +81,6 @@ module.exports = (app, classes, options = {}) ->
   server = new classServer classes, options.timeOut
   app.use json
   app.use "/#{encodeURIComponent cnf.p2p}", (req, res) -> server.process cnf.p2p, req.body, res
-  # TODO uriEncode Class to prevent funny class names
   ( (Class) -> 
     log "listening on class #{Class}"
     app.use "/#{encodeURIComponent Class}", (req, res) -> server.process Class, req.body, res
@@ -92,6 +92,8 @@ module.exports = (app, classes, options = {}) ->
 
 class Remote
   constructor: (local, msg) -> 
+    local[sseChannel] = new ChannelQ() # add a queue to the remote object
+    @_sseChannel = Channel.channels[msg.args[0]] # set _sseChannel so that it can be closed
     count = 0; uid = getSession msg # send message with same session ID
 
     ( (method) => @[method] = => send @_sseChannel, local[sseChannel], method:method, args:[].slice.call(arguments), id:"#{uid}-s#{++count}"
@@ -105,22 +107,23 @@ class Remote
 class Channel
   @channels:[]
   constructor: (req, @resp, next) ->
-    Channel.channels[@uid = "c-#{Number new Date()}"] = @
+    Channel.channels[@uid = "c-#{cnf.random()}"] = @
     @resp.statusCode = 200
     @resp.setHeader 'Content-Type', 'text/event-stream'
     @resp.setHeader 'Cache-Control', 'no-cache'
     @resp.setHeader 'Connection', 'keep-alive'
     @resp.setHeader 'Access-Control-Allow-Origin', '*'
+    log "SSE out #{@uid}", msg = uid:@uid
+    @resp.write "event: #{cnf.tag}\ndata: #{JSON.stringify msg}\n\n"
+    next() if next
     req.on 'close', => 
       log 'SSE', @uid, 'closed' 
       delete Channel.channels[@uid]
       @closed = true
-    @send uid:@uid, id:'SSE'
-    next() if next
 
   send: (msg) -> 
     log "#{msg.id} out #{@uid}", msg
-    @resp.write "event: #{cnf.tag}\ndata: #{JSON.stringify msg}\n\n"
+    @resp.write "event: #{cnf.tag}/#{@uid}\ndata: #{JSON.stringify msg}\n\n"
 
 class ChannelQ
   constructor: -> @queue = []
