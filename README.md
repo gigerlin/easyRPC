@@ -10,8 +10,8 @@ Since it is based on pure HTTP, it should pass through main corporate firewalls.
 From version 1.3.0, easyRPC can be used also in Node. When the client runs in Node, the server URL must be used when creating remote ojbects and event sources.
 
 From version 1.4.0:
-+ client methods - invoked by server objects via EventSource - can return value (note that EventSource is a one way communication channel)... 
-+ communication from client to client is possible through the predefined class `Peer 2 Peer`. This is usefule when clients are in private networks. The server - seated on the internet - acts then as a proxy for client objects. See the examples provided for more information.
++ Client methods - invoked by server objects via EventSource - can return value (note that EventSource is a one way communication channel)... 
++ Communication from client to client is possible through the predefined class `Peer 2 Peer`. This is useful when clients are in private networks. The server - seated on the internet - acts then as a proxy for client objects. See the examples provided for more information.
 
 On the server side, a web framework is needed in addition to the Node http server. Tests have been made with `express` and `connect`. A minimalist framework (called express) is also provided in the test directory.
 
