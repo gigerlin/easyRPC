@@ -6,9 +6,7 @@
  */
 
 (function() {
-  var express, expressRpc, http, port, store;
-
-  http = require('http');
+  var express, expressRpc, port, store;
 
   express = require('express');
 
@@ -22,9 +20,7 @@
     return console.log('Caught exception: ', err.stack);
   });
 
-  port = 4145;
-
-  http.createServer(store).listen(port, function() {
+  store.listen(port = 4145, function() {
     console.log("Server started at " + port, new Date(), '\n');
     return expressRpc(store, {
       Employee: require('./employee'),
