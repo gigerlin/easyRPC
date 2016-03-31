@@ -163,7 +163,7 @@
   } else if (typeof global === 'object') {
     Promise = global.Promise;
     http = require('http');
-    EventSource = require('EventSource');
+    EventSource = require('eventsource');
     fetch = function(uri, options) {
       return new Promise(function(resolve, reject) {
         var req, tmp;
