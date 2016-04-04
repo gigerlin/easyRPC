@@ -6,6 +6,8 @@
 #
 # Server Side
 #
+Promise = global.Promise or require './promise'
+
 log = require './log'
 cnf = require './config'
 sseChannel = 'c hannel'
@@ -88,7 +90,7 @@ module.exports = (app, classes, options = {}) ->
 #
 # Add SSE Support
 #
-  app.use "/#{cnf.tag}", (req, res, next) -> new Channel req, res, next
+  app.use "/#{cnf.tag}", (req, res, next) -> new Channel req, res if req.headers.accept and req.headers.accept is 'text/event-stream'
 
 class Remote
   constructor: (local, msg) -> 
@@ -106,16 +108,11 @@ class Remote
 
 class Channel
   @channels:[]
-  constructor: (req, @resp, next) ->
+  constructor: (req, @resp) ->
     Channel.channels[@uid = "c-#{cnf.random()}"] = @
-    @resp.statusCode = 200
-    @resp.setHeader 'Content-Type', 'text/event-stream'
-    @resp.setHeader 'Cache-Control', 'no-cache'
-    @resp.setHeader 'Connection', 'keep-alive'
-    @resp.setHeader 'Access-Control-Allow-Origin', '*'
     log "SSE out #{@uid}", msg = uid:@uid
+    @resp.writeHead 200, 'Content-Type':'text/event-stream', 'Cache-Control':'no-cache', Connection:'keep-alive', 'Access-Control-Allow-Origin':'*'
     @resp.write "event: #{cnf.tag}\ndata: #{JSON.stringify msg}\n\n"
-    next() if next
     req.on 'close', => 
       log 'SSE', @uid, 'closed' 
       delete Channel.channels[@uid]

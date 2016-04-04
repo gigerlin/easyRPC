@@ -91,7 +91,7 @@
     }
 
     Source.prototype.close = function() {
-      return source.close();
+      return this.source.close();
     };
 
     return Source;

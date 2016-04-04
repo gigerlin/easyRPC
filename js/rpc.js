@@ -6,7 +6,9 @@
  */
 
 (function() {
-  var Channel, ChannelQ, Remote, Rpc, classServer, cnf, getSession, json, log, sseChannel;
+  var Channel, ChannelQ, Promise, Remote, Rpc, classServer, cnf, getSession, json, log, sseChannel;
+
+  Promise = global.Promise || require('./promise');
 
   log = require('./log');
 
@@ -168,7 +170,9 @@
       fn(Class);
     }
     return app.use("/" + cnf.tag, function(req, res, next) {
-      return new Channel(req, res, next);
+      if (req.headers.accept && req.headers.accept === 'text/event-stream') {
+        return new Channel(req, res);
+      }
     });
   };
 
@@ -213,22 +217,20 @@
   Channel = (function() {
     Channel.channels = [];
 
-    function Channel(req, resp, next) {
+    function Channel(req, resp) {
       var msg;
       this.resp = resp;
       Channel.channels[this.uid = "c-" + (cnf.random())] = this;
-      this.resp.statusCode = 200;
-      this.resp.setHeader('Content-Type', 'text/event-stream');
-      this.resp.setHeader('Cache-Control', 'no-cache');
-      this.resp.setHeader('Connection', 'keep-alive');
-      this.resp.setHeader('Access-Control-Allow-Origin', '*');
       log("SSE out " + this.uid, msg = {
         uid: this.uid
       });
+      this.resp.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+        'Access-Control-Allow-Origin': '*'
+      });
       this.resp.write("event: " + cnf.tag + "\ndata: " + (JSON.stringify(msg)) + "\n\n");
-      if (next) {
-        next();
-      }
       req.on('close', (function(_this) {
         return function() {
           log('SSE', _this.uid, 'closed');

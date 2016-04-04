@@ -45,7 +45,7 @@ send = (ctx, msg) ->
 #
 class Source
   constructor: (@source, @remoteID) ->
-  close: -> source.close()
+  close: -> @source.close()
 
 exports.expose = (local, remote, url = location.origin) -> 
   local = local or {}
