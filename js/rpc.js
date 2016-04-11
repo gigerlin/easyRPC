@@ -157,19 +157,19 @@
     }
     server = new classServer(classes, options.timeOut);
     app.use(json);
-    app.use("/" + (encodeURIComponent(cnf.p2p)), function(req, res) {
+    app.post("/" + (encodeURIComponent(cnf.p2p)), function(req, res) {
       return server.process(cnf.p2p, req.body, res);
     });
     fn = function(Class) {
       log("listening on class " + Class);
-      return app.use("/" + (encodeURIComponent(Class)), function(req, res) {
+      return app.post("/" + (encodeURIComponent(Class)), function(req, res) {
         return server.process(Class, req.body, res);
       });
     };
     for (Class in classes) {
       fn(Class);
     }
-    return app.use("/" + cnf.tag, function(req, res, next) {
+    return app.get("/" + cnf.tag, function(req, res, next) {
       if (req.headers.accept && req.headers.accept === 'text/event-stream') {
         return new Channel(req, res);
       }

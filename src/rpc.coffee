@@ -82,15 +82,15 @@ json = (req, res, next) ->
 module.exports = (app, classes, options = {}) ->
   server = new classServer classes, options.timeOut
   app.use json
-  app.use "/#{encodeURIComponent cnf.p2p}", (req, res) -> server.process cnf.p2p, req.body, res
+  app.post "/#{encodeURIComponent cnf.p2p}", (req, res) -> server.process cnf.p2p, req.body, res
   ( (Class) -> 
     log "listening on class #{Class}"
-    app.use "/#{encodeURIComponent Class}", (req, res) -> server.process Class, req.body, res
+    app.post "/#{encodeURIComponent Class}", (req, res) -> server.process Class, req.body, res
   ) Class for Class of classes
 #
 # Add SSE Support
 #
-  app.use "/#{cnf.tag}", (req, res, next) -> new Channel req, res if req.headers.accept and req.headers.accept is 'text/event-stream'
+  app.get "/#{cnf.tag}", (req, res, next) -> new Channel req, res if req.headers.accept and req.headers.accept is 'text/event-stream'
 
 class Remote
   constructor: (local, msg) -> 

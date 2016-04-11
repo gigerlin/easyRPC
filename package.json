@@ -1,6 +1,6 @@
 {
   "name": "avs-easyrpc",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "RPC made easy for browser and Node",
   "main": "index.js",
   "scripts": {
